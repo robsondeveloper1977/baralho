@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Salão da Fortuna · Escolha seu jogo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14020a">
+<meta name="description" content="Jogos de cartas e mesa em 3D com fichas virtuais.">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/lobby.css">
+</head>
+<body class="lobby">
+<div id="sparks" aria-hidden="true"></div>
+
+<div class="lantern l1" aria-hidden="true"></div>
+<div class="lantern l2" aria-hidden="true"></div>
+<div class="lantern l3" aria-hidden="true"></div>
+<div class="lantern l4" aria-hidden="true"></div>
+
+<main class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">福</span>
+      <div><b class="gold-text">SALÃO DA FORTUNA</b><small>Jogos de mesa em 3D</small></div>
+    </div>
+    <div class="wallet" title="Suas fichas virtuais, salvas neste navegador">
+      <span class="wallet-coin" aria-hidden="true"></span>
+      <span><small>SUAS FICHAS</small><b id="wallet">1.000</b></span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-row" aria-hidden="true">
+      <span class="hs hs1" data-art="orange" data-size="58"></span><span class="hs hs2" data-art="firecracker" data-size="58"></span>
+      <div id="medal" class="medallion"><canvas id="tiger" width="220" height="220"></canvas></div>
+      <span class="hs hs3" data-art="ingot" data-size="58"></span><span class="hs hs4" data-art="sack" data-size="58"></span>
+    </div>
+    <h1 class="gold-text">ESCOLHA SEU JOGO</h1>
+    <p>Sente-se à mesa e boa sorte! O tigre da fortuna está de olho.</p>
+  </section>
+
+  <section class="games" id="games" aria-label="Jogos disponíveis"></section>
+
+  <div class="clouds" aria-hidden="true"></div>
+  <footer class="foot">
+    Jogos de entretenimento com fichas virtuais. Não envolvem dinheiro real nem prêmios. Maiores de 18 anos.
+  </footer>
+</main>
+
+<div id="leave" aria-hidden="true"></div>
+
+<script src="js/common.js"></script>
+<script src="js/art.js"></script>
+<script src="js/lobby.js"></script>
+</body>
+</html>

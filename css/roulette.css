@@ -1,0 +1,106 @@
+/* Roleta do Tigre — complementa style.css (tema, painel, modais, fichas) */
+body.rl{--panel-h:190px;--wheel-h:300px}
+.art-ico{display:inline-block;vertical-align:middle;filter:drop-shadow(0 2px 3px #0008)}
+.chips{padding:10px 6px 2px}
+
+/* ---------- coluna da mesa ---------- */
+#side{position:absolute;display:flex;flex-direction:column;gap:10px;overflow:auto;pointer-events:none;padding:2px}
+#side > *{pointer-events:auto}
+body.wide #side{right:18px;top:78px;bottom:calc(var(--panel-h) + 6px);width:min(740px,55vw);justify-content:center}
+body.stack #side{left:10px;right:10px;top:calc(68px + var(--wheel-h));bottom:calc(var(--panel-h) + 4px)}
+
+/* Tigre da Sorte */
+#luck{display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:18px;flex:none;
+  background:linear-gradient(#34070f,#14020a) padding-box,var(--edge) border-box;border:2px solid transparent;box-shadow:0 8px 22px #000a}
+.medallion{flex:none;width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 50% 40%,#c0202f,#5b0a16) padding-box,var(--edge) border-box;border:4px solid transparent;
+  box-shadow:0 0 0 2px #4a2800,0 6px 16px #000b,0 0 22px #f7c94844;animation:bob 3.4s ease-in-out infinite}
+.medallion canvas{width:100%;height:100%;display:block;border-radius:50%}
+.medallion.bounce{animation:hop .8s ease-out 1}.medallion.shake{animation:wob .6s ease-in-out 1}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes hop{0%{transform:translateY(0) scale(1)}35%{transform:translateY(-16px) scale(1.12)}70%{transform:translateY(0) scale(.96)}100%{transform:none}}
+@keyframes wob{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+.luck-body{flex:1;min-width:0}
+.luck-title{display:flex;align-items:center;gap:8px;font-size:17px;letter-spacing:.14em}
+.luck-title .mult{padding:1px 9px;border-radius:999px;font-weight:900;font-size:14px;color:#4a2800;background:linear-gradient(#fff3b0,#f7c948 55%,#c8860a);box-shadow:0 2px 6px #0008}
+.luck-sub{font-size:12px;opacity:.7;margin:2px 0 7px}
+.luck-nums{display:flex;gap:8px;flex-wrap:wrap}
+.nball{display:inline-grid;place-items:center;min-width:34px;height:34px;padding:0 6px;border-radius:50%;font-weight:900;font-size:14px;color:#fff;border:2px solid #f7c948aa;box-shadow:0 2px 6px #000a}
+.nball.red{background:radial-gradient(circle at 35% 30%,#ff5a60,#c8102e 60%,#7a0a1c)}
+.nball.black{background:radial-gradient(circle at 35% 30%,#4a4a54,#17171d 60%,#06060a)}
+.nball.green{background:radial-gradient(circle at 35% 30%,#4be36a,#1fa34a 60%,#0a6a2a)}
+.luck-nums .nball{width:40px;height:40px;font-size:16px;border-color:#fff3b0;box-shadow:0 0 14px #f7c948aa,0 2px 6px #000a;animation:glowpop .5s ease-out both}
+@keyframes glowpop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.hist-box{flex:none;max-width:42%}
+.hist-box small{display:block;font-size:9px;letter-spacing:.24em;opacity:.6;font-weight:700;margin-bottom:4px}
+#history{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;min-height:26px}
+#history .nball{min-width:26px;height:26px;font-size:11px;padding:0 3px;border-width:1.5px}
+#history:empty::after{content:"—";opacity:.4}
+
+/* ---------- mesa de apostas ---------- */
+#board{display:grid;gap:3px;padding:10px;border-radius:18px;flex:none;position:relative;
+  background:radial-gradient(120% 140% at 50% 0%,#a01728cc,#5a0a16dd) padding-box,var(--edge) border-box;border:3px solid transparent;box-shadow:0 12px 30px #000b}
+#board.h{grid-template-columns:minmax(30px,.75fr) repeat(12,1fr) minmax(38px,.85fr);grid-auto-rows:minmax(36px,5.4vh)}
+#board.v{grid-template-columns:repeat(3,1fr) 0.8fr 0.9fr;grid-auto-rows:minmax(34px,4.6vh)}
+.cell{position:relative;display:grid;place-items:center;min-width:0;border-radius:8px;border:2px solid #f7c94855;color:#fff;font:900 clamp(12px,1.5vw,18px) inherit;font-family:inherit;
+  text-shadow:0 1px 2px #000a;transition:transform .12s,filter .12s,box-shadow .12s}
+.cell:hover{transform:translateY(-1px);filter:brightness(1.25)}
+.cell:active{transform:scale(.95)}
+.cell.red{background:linear-gradient(#e8303c,#8c1422)}
+.cell.black{background:linear-gradient(#34343c,#0c0c10)}
+.cell.green{background:linear-gradient(#2fc85a,#0a6a2a)}
+.cell.out{background:linear-gradient(#4a0f1a,#2a060d);font-size:clamp(10px,1.15vw,14px);letter-spacing:.06em;padding:0 3px;line-height:1.1;text-align:center}
+.cell.out.red{background:linear-gradient(#e8303c,#8c1422)}.cell.out.black{background:linear-gradient(#34343c,#0c0c10)}
+.cell .lbl{position:relative;z-index:1}
+#board.v .cell.out .lbl{writing-mode:vertical-rl;transform:rotate(180deg)}
+.cell.hint{box-shadow:0 0 0 2px #fff3b0,0 0 14px #f7c948;filter:brightness(1.3)}
+.cell.lucky{border-color:#fff3b0;box-shadow:0 0 0 2px #f7c948,0 0 16px #f7c948cc;animation:luckypulse 1.4s ease-in-out infinite}
+.cell.lucky::after{content:"";position:absolute;right:1px;top:1px;width:46%;max-width:18px;aspect-ratio:1;background:var(--tiger) center/contain no-repeat;pointer-events:none}
+@keyframes luckypulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+.cell.win{animation:winflash .5s ease-in-out 6;border-color:#fff}
+@keyframes winflash{50%{filter:brightness(2) saturate(1.4);box-shadow:0 0 0 3px #fff,0 0 24px #f7c948}}
+.mark{position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);min-width:28px;height:28px;padding:0 5px;border-radius:50%;display:grid;place-items:center;
+  font-size:11px;font-weight:900;color:#fff;border:3px dashed #ffffffd0;box-shadow:0 3px 7px #000c,inset 0 0 0 2px var(--mc);background:var(--mc);pointer-events:none;animation:drop .22s ease-out}
+.mark[hidden]{display:none}
+@keyframes drop{from{transform:translate(-50%,-190%) scale(1.4);opacity:0}to{transform:translate(-50%,-50%);opacity:1}}
+
+/* ---------- ficha selecionada ---------- */
+.chip.sel{transform:translateY(-7px) scale(1.1);box-shadow:0 0 0 3px #fff3b0,0 10px 18px #000b,0 0 22px #f7c948}
+.tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.spin{flex:none}
+
+/* ---------- resultado ---------- */
+#banner{position:absolute;left:30%;top:110px;transform:translate(-50%,-50%) scale(.6)}
+#banner.show{transform:translate(-50%,-50%) scale(1)}
+#banner .t,#banner .a{display:inline-flex;align-items:center;gap:10px}
+#banner .t{font-size:clamp(18px,3vw,30px)}
+#banner .a{margin-left:14px;font-size:clamp(16px,2.6vw,26px)}
+#banner .sub{display:block;font-size:12px;letter-spacing:.2em;font-weight:900;color:#ffe08a;margin-top:2px}
+#banner .nball{width:46px;height:46px;font-size:22px;-webkit-text-fill-color:#fff;color:#fff;text-shadow:0 1px 2px #000}
+#banner.lucky{animation:glow 1s ease-in-out infinite alternate}
+#toast{top:78px}
+
+/* ---------- responsivo ---------- */
+body.stack #banner{top:calc(68px + var(--wheel-h) * .5) !important}
+@media (max-width:760px){
+  .medallion{width:62px;height:62px;border-width:3px}
+  #luck{padding:7px 10px;gap:9px}
+  .luck-title{font-size:13px}.luck-sub{display:none}
+  .luck-nums .nball{width:32px;height:32px;font-size:13px}
+  .hist-box{max-width:38%}
+  #history .nball{min-width:22px;height:22px;font-size:10px}
+  #bundo,#bclr,#brep,#bdbl{padding:7px 9px}
+  .tools{max-width:100%}
+  .stat{min-width:90px}
+  #panel .grp{gap:8px}
+}
+@media (max-width:480px){
+  #panel{gap:6px;padding-top:8px}
+  .stat{min-width:0;flex:1;padding:4px 6px 5px}.stat output{font-size:17px}.stat label{font-size:8px;letter-spacing:.12em}
+  .controls{min-height:0}
+  #panel .grp{gap:6px}
+  .tools{gap:4px}.mini{font-size:11px;letter-spacing:.05em}
+  #luck{padding:6px 9px}
+  #panel .grp{justify-content:space-between}
+  .chips{gap:4px}.chip{width:44px;height:44px;font-size:12px}
+  .spin{width:76px;height:76px;font-size:14px}
+}

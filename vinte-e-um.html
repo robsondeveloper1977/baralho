@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Vinte e Um · Blackjack da Fortuna</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14020a">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="sparks" aria-hidden="true"></div>
+
+<div id="hud">
+  <header id="topbar">
+    <div class="top-left">
+      <a class="back" id="btnBack" href="index.html" title="Voltar ao menu de jogos (Esc)" aria-label="Voltar ao menu de jogos"><i aria-hidden="true">‹</i><span>MENU</span></a>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">福</span>
+        <div><b class="gold-text">VINTE E UM</b><small>Blackjack da Fortuna</small></div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btnSound" aria-label="Ligar ou desligar o som" title="Som (M)">🔊</button>
+      <button class="icon-btn" id="btnHelp" aria-label="Regras e atalhos" title="Regras (?)">?</button>
+    </div>
+  </header>
+
+  <div id="mascot" aria-hidden="true"><canvas id="tiger" width="220" height="220"></canvas></div>
+  <div id="toast" role="status"></div>
+
+  <div class="badge" id="dBadge" hidden><span class="who">DEALER</span><b class="pts">0</b><span class="tag"></span></div>
+  <div class="badge" id="pBadge" hidden><span class="who">VOCÊ</span><b class="pts">0</b><span class="tag"></span></div>
+
+  <div id="banner" role="status" aria-live="polite"><div class="t"></div><div class="a"></div></div>
+
+  <footer id="panel">
+    <div class="stats">
+      <div class="stat"><label><img data-art="coin" data-size="14" alt=""> SALDO</label><output id="bal">1000</output></div>
+      <div class="stat bet-stat"><label><img data-art="hongbao" data-size="14" alt=""> APOSTA</label>
+        <div class="stepper">
+          <button class="step" id="bm" aria-label="Diminuir aposta">−</button>
+          <output id="bet">50</output>
+          <button class="step" id="bp" aria-label="Aumentar aposta">+</button>
+        </div>
+      </div>
+      <div class="stat win-stat" id="winStat"><label><img data-art="ingot" data-size="14" alt=""> GANHO</label><output id="won">0</output></div>
+    </div>
+
+    <div class="controls">
+      <div class="grp on" id="gBet">
+        <div class="chips" id="chips">
+          <button class="chip" data-v="50" aria-label="Adicionar 50"><span>50</span></button>
+          <button class="chip" data-v="100" aria-label="Adicionar 100"><span>100</span></button>
+          <button class="chip" data-v="250" aria-label="Adicionar 250"><span>250</span></button>
+          <button class="chip" data-v="500" aria-label="Adicionar 500"><span>500</span></button>
+        </div>
+        <button class="mini" id="bclr">Mínima</button>
+        <button class="mini" id="ball">Tudo</button>
+        <button class="spin" id="deal" aria-label="Distribuir cartas">JOGAR<small>ENTER</small></button>
+      </div>
+      <div class="grp" id="gPlay">
+        <button class="act hit" id="hit">Pedir<small>H</small></button>
+        <button class="act stand" id="stand">Parar<small>S</small></button>
+        <button class="act dbl" id="dbl">Dobrar<small>D</small></button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<div class="modal" id="rules" hidden role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+  <div class="modal-card">
+    <h2 class="gold-text" id="rulesTitle">COMO JOGAR</h2>
+    <ul>
+      <li>Chegue o mais perto possível de <b>21</b> sem estourar. Ás vale 1 ou 11; figuras valem 10.</li>
+      <li><b>Blackjack</b> (Ás + figura/10 nas duas primeiras cartas) paga <b>3 para 2</b>.</li>
+      <li>O dealer compra até chegar a <b>17</b> e para em todos os 17.</li>
+      <li><b>Dobrar</b> só é possível nas duas primeiras cartas: você dobra a aposta e recebe uma única carta.</li>
+      <li>Sem split e sem seguro.</li>
+    </ul>
+    <p class="center"><kbd>H</kbd> pedir · <kbd>S</kbd> parar · <kbd>D</kbd> dobrar · <kbd>Enter</kbd> jogar · <kbd>↑</kbd><kbd>↓</kbd> aposta · <kbd>M</kbd> som · <kbd>Esc</kbd> menu</p>
+    <p class="fine">Jogo de entretenimento com fichas virtuais. Não envolve dinheiro real nem prêmios.</p>
+    <p class="center"><button class="mini" data-close>Fechar</button></p>
+  </div>
+</div>
+
+<div class="modal" id="broke" hidden role="dialog" aria-modal="true" aria-labelledby="brokeTitle">
+  <div class="modal-card center">
+    <h2 class="gold-text" id="brokeTitle">SEM FICHAS</h2>
+    <p>As fichas acabaram. O tigre te dá mais uma chance!</p>
+    <button class="spin" id="restart">RECOMEÇAR COM 1000</button>
+    <p><a class="mini" href="index.html">‹ Voltar ao menu</a></p>
+  </div>
+</div>
+
+<div class="modal" id="leaveModal" hidden role="dialog" aria-modal="true" aria-labelledby="leaveTitle">
+  <div class="modal-card center">
+    <h2 class="gold-text" id="leaveTitle">SAIR DA MESA?</h2>
+    <p>Há uma rodada em andamento. Se sair agora, você perde a aposta desta rodada.</p>
+    <div class="row">
+      <button class="mini" data-close>Continuar jogando</button>
+      <a class="mini danger" href="index.html">Sair e perder a aposta</a>
+    </div>
+  </div>
+</div>
+
+<div id="fallback"><div><h2>WebGL indisponível</h2><p>Este jogo precisa de aceleração gráfica (WebGL). Ative-a no navegador e recarregue a página.</p></div></div>
+
+<script src="lib/three.global.js"></script>
+<script src="js/logic.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/common.js"></script>
+<script src="js/art.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

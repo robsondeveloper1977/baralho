@@ -1,0 +1,14 @@
+{
+  "name": "baralho",
+  "version": "2.0.0",
+  "description": "Vinte e Um 3D — Blackjack da Fortuna (three.js)",
+  "private": true,
+  "scripts": {
+    "start": "node serve.mjs",
+    "test": "node --test test/logic.test.mjs test/roulette.test.mjs"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.170.0"
+  }
+}
