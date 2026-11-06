@@ -48,33 +48,19 @@ const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 80);
 const PITCH = 58 * Math.PI / 180;
 let camDist = 16;
 const mouse = { x: 0, y: 0 };
-addEventListener('pointermove', e => { mouse.x = e.clientX / innerWidth * 2 - 1; mouse.y = e.clientY / innerHeight * 2 - 1; });
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+addEventListener('pointermove', e => { if (reducedMotion.matches || e.pointerType !== 'mouse') return; mouse.x = e.clientX / innerWidth * 2 - 1; mouse.y = e.clientY / innerHeight * 2 - 1; });
 
-scene.add(new THREE.HemisphereLight(0xffe6bf, 0x3a0a10, 0.95));
+scene.add(new THREE.HemisphereLight(0xffe6bf, 0x132a20, 0.95));
 const spot = new THREE.SpotLight(0xfff0d0, 230, 40, 0.75, 0.5, 1.4);
 spot.position.set(0, 12, 4); spot.castShadow = true; spot.shadow.mapSize.set(2048, 2048); spot.shadow.bias = -0.0004;
 scene.add(spot);
-const warm = new THREE.PointLight(0xff6a3a, 30, 16, 1.6); warm.position.set(-4, 3, -3); scene.add(warm);
+const warm = new THREE.PointLight(0xffd6a0, 25, 16, 1.6); warm.position.set(-4, 3, -3); scene.add(warm);
 
-// ambiente refletido (HDR procedural): dá brilho real ao ouro, ao metal e ao verniz
-{
-  const pmrem = new THREE.PMREMGenerator(renderer), env = new THREE.Scene();
-  env.background = new THREE.Color(0x1a0608);
-  const panel = (w, h, c, x, y, z) => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
-    m.position.set(x, y, z); m.lookAt(0, 0, 0); env.add(m);
-  };
-  panel(10, 6, new THREE.Color(3.0, 2.6, 2.1), 0, 9, 5);        // luz quente do teto
-  panel(6, 4, new THREE.Color(1.8, 0.95, 0.4), -9, 3, -4);       // reflexo dourado lateral
-  panel(6, 3, new THREE.Color(2.0, 1.8, 1.6), 9, 2, 3);          // faixa de luz fria
-  panel(14, 2, new THREE.Color(0.9, 0.2, 0.15), 0, -2, -9);      // chão vermelho refletido
-  scene.environment = pmrem.fromScene(env, 0.02).texture;
-  scene.environmentIntensity = 0.6;
-  pmrem.dispose();
-}
+CasinoRender.setup(renderer, scene);
 
-const goldMat = new THREE.MeshStandardMaterial({ color: 0xe6b020, metalness: 0.5, roughness: 0.3, emissive: 0x4a2c00 });
-const lacquer = new THREE.MeshStandardMaterial({ color: 0x7a0f1a, roughness: 0.35, metalness: 0.15 });
+const goldMat = CasinoRender.brass();
+const lacquer = CasinoRender.wood();
 const darkMat = new THREE.MeshStandardMaterial({ color: 0x24040a, roughness: 0.6 });
 
 // ---------- textura da roda (disco giratório) ----------
@@ -109,11 +95,13 @@ function makeWheelTexture() {
 // ---------- textura do cubo central (tigre) ----------
 function makeHubTexture() {
   const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
-  const gr = g.createRadialGradient(S / 2, S / 2, 20, S / 2, S / 2, S / 2); gr.addColorStop(0, '#c0202f'); gr.addColorStop(0.75, '#7a0f1a'); gr.addColorStop(1, '#4a0812');
+  const gr = g.createRadialGradient(S / 2, S / 2, 20, S / 2, S / 2, S / 2); gr.addColorStop(0, '#265743'); gr.addColorStop(0.75, '#143c2d'); gr.addColorStop(1, '#09251c');
   g.fillStyle = gr; g.fillRect(0, 0, S, S);
   g.strokeStyle = '#f7c948'; g.lineWidth = 14; g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 12, 0, TAU); g.stroke();
   g.lineWidth = 4; g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 34, 0, TAU); g.stroke();
-  Common.drawTigerAt(g, S / 2, S / 2 + 8, S * 0.72, 'idle');
+  g.fillStyle = '#d8c393'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '52px Georgia'; g.fillText('FORTUNA', S / 2, S / 2 - 30);
+  g.font = '22px Georgia'; g.fillText('EUROPEAN ROULETTE', S / 2, S / 2 + 30);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
 
@@ -163,16 +151,17 @@ const wheelGroup = new THREE.Group(); scene.add(wheelGroup);
 }
 // bacia fixa: pista da bola + aro dourado
 {
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(3.75, 3.5, 0.5, 96), lacquer); base.position.y = -0.12; base.castShadow = base.receiveShadow = true; scene.add(base);
-  const track = new THREE.Mesh(new THREE.RingGeometry(2.6, 3.25, 128), new THREE.MeshStandardMaterial({ color: 0x3a0610, roughness: 0.25, metalness: 0.3 }));
+  // An open bowl keeps the housing from covering the recessed numbered pockets.
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(3.75, 3.5, 0.5, 96, 1, true), lacquer); base.position.y = -0.12; base.castShadow = base.receiveShadow = true; scene.add(base);
+  const track = new THREE.Mesh(new THREE.RingGeometry(2.6, 3.25, 128), new THREE.MeshStandardMaterial({ color: 0x211912, roughness: 0.25, metalness: 0.15 }));
   track.rotation.x = -Math.PI / 2; track.position.y = 0.14; track.receiveShadow = true; scene.add(track);
   const groove = new THREE.Mesh(new THREE.RingGeometry(2.78, 2.9, 128), new THREE.MeshBasicMaterial({ color: 0xf7c948, transparent: true, opacity: 0.35 }));
   groove.rotation.x = -Math.PI / 2; groove.position.y = 0.145; scene.add(groove);
-  const outer = new THREE.Mesh(new THREE.RingGeometry(3.25, 3.62, 128), new THREE.MeshStandardMaterial({ color: 0x5a0a14, roughness: 0.5 }));
+  const outer = new THREE.Mesh(new THREE.RingGeometry(3.25, 3.62, 128), CasinoRender.wood());
   outer.rotation.x = -Math.PI / 2; outer.position.y = 0.2; scene.add(outer);
   const rim1 = new THREE.Mesh(new THREE.TorusGeometry(3.3, 0.1, 16, 128), goldMat); rim1.rotation.x = Math.PI / 2; rim1.position.y = 0.2; rim1.castShadow = true; scene.add(rim1);
   const rim2 = new THREE.Mesh(new THREE.TorusGeometry(3.64, 0.14, 16, 128), goldMat); rim2.rotation.x = Math.PI / 2; rim2.position.y = 0.22; rim2.castShadow = true; scene.add(rim2);
-  const shadowCatcher = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.35 }));
+  const shadowCatcher = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0x174e37, roughness: 1, bumpMap: CasinoRender.texture("felt"), bumpScale: .025 }));
   shadowCatcher.rotation.x = -Math.PI / 2; shadowCatcher.position.y = -0.38; shadowCatcher.receiveShadow = true; scene.add(shadowCatcher);
   // cubo central fixo com o tigre
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(1.32, 1.5, 0.34, 64), goldMat); hub.position.y = 0.34; hub.castShadow = true; scene.add(hub);
@@ -181,7 +170,7 @@ const wheelGroup = new THREE.Group(); scene.add(wheelGroup);
   const hubRing = new THREE.Mesh(new THREE.TorusGeometry(1.34, 0.06, 12, 64), goldMat); hubRing.rotation.x = Math.PI / 2; hubRing.position.y = 0.52; scene.add(hubRing);
 }
 
-const ball = new THREE.Mesh(new THREE.SphereGeometry(0.095, 24, 18), new THREE.MeshStandardMaterial({ color: 0xfffaf0, roughness: 0.15, metalness: 0.3, emissive: 0x332a20 }));
+const ball = new THREE.Mesh(new THREE.SphereGeometry(0.095, 24, 18), new THREE.MeshStandardMaterial({ color: 0xfffaf0, roughness: 0.2, metalness: 0 }));
 ball.castShadow = true; scene.add(ball);
 
 // marcadores do Tigre da Sorte (giram com a roda) e destaque da casa vencedora

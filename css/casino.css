@@ -1,0 +1,55 @@
+/* The shared casino finish; game-specific layout and state classes stay intact. */
+:root{--gold-1:#eee0bb;--gold-2:#cfb579;--gold-3:#a18750;--gold-4:#665432;--text:#f1eddf;--green-1:#b6d8bc;--green-2:#478362;--green-3:#1c513b;--edge:linear-gradient(135deg,#d5bf86,#76613b 55%,#bb9f62)}
+html{background:#081a14}
+body,body.lobby{background:radial-gradient(ellipse at 50% 20%,#294536 0%,#10271e 48%,#060e0b 100%) fixed;font-family:"Segoe UI",system-ui,sans-serif}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 119px,#c8ae7110 120px 121px,transparent 122px 240px);mask-image:linear-gradient(#000,transparent 70%)}
+#sparks,.lantern,.floaters,.clouds,.hero-row,#mascot{display:none}
+.gold-text{background:linear-gradient(#f4e9cd,#cbb17b);background-clip:text;-webkit-background-clip:text}
+.brand-mark{background:linear-gradient(140deg,#e4d1a5,#9f8350);color:#172c23;box-shadow:0 2px 8px #0008}
+.brand b{font-family:Georgia,serif;font-weight:400}
+.brand small{letter-spacing:.24em}
+#topbar{background:linear-gradient(#08110eee,transparent);padding-top:16px}
+.back,.icon-btn,.mini,.badge,.stat,.wallet,#luck,.modal-card{background:linear-gradient(145deg,#24352c,#0d1813) padding-box,var(--edge) border-box;border-width:1px;box-shadow:0 6px 18px #0005}
+.back,.mini{border-radius:8px}
+.stat{border-radius:8px}
+.stat output,.wallet b{text-shadow:none;font-weight:500}
+.stat label{opacity:.85}
+#panel{background:linear-gradient(transparent,#07100dde 30%,#07100df5);gap:8px}
+.spin{background:linear-gradient(145deg,#d8c592,#9f8452);color:#15291e;border:1px solid #efdfb6;box-shadow:0 5px 15px #0009;animation:none}
+.act,.go{border-radius:8px;border-width:1px;box-shadow:0 4px 12px #0006;animation:none;font-weight:600}
+.act.hit{color:#f5f3e9;background:linear-gradient(#397d59,#23593e)}
+.act.stand{background:linear-gradient(#a24b45,#71322d)}
+.act.dbl{background:linear-gradient(#e4d1a3,#ac9059)}
+.chip{box-shadow:0 2px 0 #ddd8,0 4px 0 #17221a,0 6px 0 #aaa6,0 9px 12px #0008;filter:saturate(.7)}
+.modal{background:#020906cc}.modal-card{border-radius:14px}
+#banner{background:linear-gradient(#24382bf5,#101d16f5) padding-box,var(--edge) border-box;border-width:1px;border-radius:10px}
+#banner::before,#banner::after{display:none}
+body.rl #board{background:radial-gradient(ellipse at top,#246548,#123d2b) padding-box,var(--edge) border-box;border:2px solid transparent;border-radius:10px;box-shadow:0 10px 30px #0009,inset 0 0 40px #0005}
+.cell{border-radius:3px;border-color:#d4c59780;font-weight:600}
+.cell.red{background:linear-gradient(#a83e3e,#792b2c)}
+.cell.black{background:linear-gradient(#292d29,#111713)}
+.cell.green{background:linear-gradient(#357b54,#205435)}
+#luck{border-radius:10px}.medallion{width:52px;height:52px;animation:none;filter:saturate(.55);box-shadow:none;border-width:1px}
+.luck-nums .nball{box-shadow:0 2px 5px #0006;border-color:#c9ad70}
+.lobby .wrap{max-width:1280px;padding-top:28px}
+.lobby .top{padding-bottom:24px;border-bottom:1px solid #c4ad6b33}
+.hero{margin:55px 0 40px;text-align:left}
+.hero::before{content:"SALÃO PRIVATIVO · FICHAS VIRTUAIS";display:block;color:#c6b58c;font-size:11px;letter-spacing:.28em;margin-bottom:14px}
+.hero h1{font:400 clamp(30px,4.5vw,56px)/1.15 Georgia,serif;letter-spacing:.025em;margin:0 0 16px}
+.hero p{font-size:16px;color:#c1c9bc;margin:0}
+.game{background:linear-gradient(145deg,#1c3026,#0d1913);border:1px solid #ad955c66;border-radius:12px;box-shadow:0 12px 28px #0006}
+a.game:hover,a.game:focus-visible{box-shadow:0 18px 36px #0009;filter:brightness(1.08)}
+.art{height:220px;background:radial-gradient(ellipse at 50% 25%,#357357,#153e2a 70%,#0b2318);box-shadow:inset 0 -14px 30px #0004}
+.art::before{opacity:.15;background:repeating-linear-gradient(0deg,#fff2 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,#0003 0 1px,transparent 1px 3px)}
+.table-preview{position:relative;width:100%;height:100%;object-fit:cover;display:block}
+.info h3{font:400 25px Georgia,serif;letter-spacing:.025em;text-transform:none}
+.info p{line-height:1.6;color:#c1c9bc}
+.tags li{border-color:#b5a06b44;background:#b5a06b0b;color:#d2c39e;border-radius:4px;font-weight:400}
+.go{background:linear-gradient(#d7c493,#ac905a);color:#18291e;border-color:#ddcba0;letter-spacing:.12em}
+.pcard{background:linear-gradient(115deg,#fffefa,#e8e5db);box-shadow:1px 2px 0 #b6b3a9,2px 4px 0 #e3e0d4,4px 12px 18px #0009,inset 0 0 0 1px #fff;border-radius:6px}
+.wheel{animation:none;transform:rotateX(27deg);border:8px solid #51311f;box-shadow:0 0 0 2px #beab7b,0 0 0 10px #2e1d13,0 0 0 12px #b49b63,0 16px 24px #000a}
+.wheel-tiger{display:none}
+.wheel::after{content:"";position:absolute;inset:33%;border-radius:50%;background:radial-gradient(circle at 35% 25%,#f1e0b4,#a88b4e 40%,#5b4828 65%,#c7ad71);box-shadow:0 4px 6px #0008}
+.foot{color:#b4bcae;line-height:1.7}
+@media(max-width:600px){.lobby .wrap{padding:16px}.hero{margin:32px 0 26px}.hero::before{font-size:9px;letter-spacing:.18em}.brand b{font-size:15px}.art{height:180px}#topbar{padding:10px}.back{padding-right:12px}.luck-title{font-size:14px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

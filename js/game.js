@@ -10,8 +10,8 @@ const ranksOf = hand => hand.map(c => c.userData.rank);
 const START_BALANCE = 1000;
 
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('vu21.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('vu21.' + k, JSON.stringify(v)); } catch {} },
+  get(k, d) { if (k === 'balance') return Common.wallet.get(); try { const v = localStorage.getItem('vu21.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { if (k === 'balance') { Common.wallet.set(v); return; } try { localStorage.setItem('vu21.' + k, JSON.stringify(v)); } catch {} },
 };
 
 // ======================================================================
@@ -27,7 +27,7 @@ const state = {
   doubled: false,
   shoe: new Shoe(4),
 };
-if (!(state.balance >= MIN_BET)) state.balance = START_BALANCE;
+// Low balances are preserved; only the explicit restart button refills chips.
 state.bet = Math.max(MIN_BET, Math.min(state.bet, maxBet(state.balance)));
 if (state.bet % MIN_BET) state.bet = MIN_BET;
 
@@ -51,13 +51,15 @@ renderer.domElement.id = 'scene';
 document.body.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x2a0509, 16, 36);
+scene.fog = new THREE.Fog(0x081a14, 22, 48);
+CasinoRender.setup(renderer, scene);
 const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 80);
 const camBase = new THREE.Vector3(0, 11.6, 9.4);
 const look = new THREE.Vector3(0, 0, 0.3);
 camera.position.copy(camBase);
 const mouse = { x: 0, y: 0 };
-addEventListener('pointermove', e => { mouse.x = e.clientX / innerWidth * 2 - 1; mouse.y = e.clientY / innerHeight * 2 - 1; });
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+addEventListener('pointermove', e => { if (reducedMotion.matches || e.pointerType !== 'mouse') return; mouse.x = e.clientX / innerWidth * 2 - 1; mouse.y = e.clientY / innerHeight * 2 - 1; });
 
 function resize() {
   const w = innerWidth, h = innerHeight, a = w / h;
@@ -70,26 +72,18 @@ function resize() {
 }
 addEventListener('resize', resize); resize();
 
-scene.add(new THREE.HemisphereLight(0xffe6bf, 0x3a0a10, 0.8));
+scene.add(new THREE.HemisphereLight(0xffe6bf, 0x132a20, 0.8));
 const spot = new THREE.SpotLight(0xfff0d0, 160, 40, 0.7, 0.55, 1.5);
 spot.position.set(0, 11, 3); spot.castShadow = true; spot.shadow.mapSize.set(2048, 2048); spot.shadow.bias = -0.0004;
 scene.add(spot);
-const warm = new THREE.PointLight(0xff6a3a, 40, 16, 1.6); warm.position.set(0, 4, -4.5); scene.add(warm);
+const warm = new THREE.PointLight(0xffd6a0, 25, 16, 1.6); warm.position.set(0, 4, -4.5); scene.add(warm);
 
 // ---------- mesa ----------
 function makeFelt() {
   const S = 1024, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
   const rg = g.createRadialGradient(S / 2, S / 2, 40, S / 2, S / 2, S * 0.52);
-  rg.addColorStop(0, '#b81c2f'); rg.addColorStop(0.6, '#8c1323'); rg.addColorStop(1, '#5a0a16');
+  rg.addColorStop(0, '#28664e'); rg.addColorStop(0.6, '#19503c'); rg.addColorStop(1, '#103c2c');
   g.fillStyle = rg; g.fillRect(0, 0, S, S);
-  // ondas (seigaiha) discretas em dourado
-  g.strokeStyle = 'rgba(255,215,110,.11)'; g.lineWidth = 2;
-  const r = 46;
-  for (let row = 0; row * r * 0.55 < S + r; row++) {
-    const y = row * r * 0.55, off = (row % 2) * r;
-    for (let x = -r + off; x < S + r; x += r * 2)
-      for (const rr of [r, r * 0.72, r * 0.44]) { g.beginPath(); g.arc(x, y, rr, Math.PI, 0); g.stroke(); }
-  }
   for (let i = 0; i < 18000; i++) {
     g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${Math.random() * 0.06})`;
     g.fillRect(Math.random() * S, Math.random() * S, 2, 2);
@@ -99,17 +93,17 @@ function makeFelt() {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
 const tableMats = [
-  new THREE.MeshStandardMaterial({ color: 0x3a0610, roughness: 0.8 }),
-  new THREE.MeshStandardMaterial({ map: makeFelt(), roughness: 0.95 }),
+  CasinoRender.wood(),
+  new THREE.MeshStandardMaterial({ map: makeFelt(), roughness: 1, bumpMap: CasinoRender.texture("felt"), bumpScale: .018 }),
   new THREE.MeshStandardMaterial({ color: 0x1a0306 }),
 ];
 const table = new THREE.Mesh(new THREE.CylinderGeometry(7.5, 7.5, 0.4, 96), tableMats);
 table.scale.set(1.15, 1, 0.8); table.position.y = -0.21; table.receiveShadow = true; scene.add(table);
 
-const goldMat = new THREE.MeshStandardMaterial({ color: 0xe6b020, metalness: 0.45, roughness: 0.32, emissive: 0x4a2c00 });
-const rim = new THREE.Mesh(new THREE.TorusGeometry(7.5, 0.42, 24, 120), goldMat);
+const goldMat = CasinoRender.brass();
+const rim = new THREE.Mesh(new THREE.TorusGeometry(7.5, 0.42, 24, 120), CasinoRender.leather());
 rim.rotation.x = Math.PI / 2; rim.scale.set(1.15, 0.8, 1); rim.position.y = -0.04; rim.castShadow = true; scene.add(rim);
-const base = new THREE.Mesh(new THREE.CylinderGeometry(7.2, 6.4, 0.7, 64), new THREE.MeshStandardMaterial({ color: 0x24040a, roughness: 0.7 }));
+const base = new THREE.Mesh(new THREE.CylinderGeometry(7.2, 6.4, 0.7, 64), CasinoRender.wood());
 base.scale.set(1.15, 1, 0.8); base.position.y = -0.7; scene.add(base);
 
 // texto decorativo sobre o feltro
@@ -131,20 +125,18 @@ base.scale.set(1.15, 1, 0.8); base.position.y = -0.7; scene.add(base);
 }
 
 // ---------- lanternas ----------
-const lanterns = [];
-function makeLantern(x, y, z, s, phase) {
-  const pivot = new THREE.Group(); pivot.position.set(x, y, z); pivot.scale.setScalar(s);
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.6, 24, 18), new THREE.MeshStandardMaterial({ color: 0xd7192a, emissive: 0xff2210, emissiveIntensity: 0.9, roughness: 0.55 }));
-  body.scale.y = 0.85; body.position.y = -1.3; pivot.add(body);
-  for (const sy of [1, -1]) {
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.2, 0.16, 16), goldMat); cap.position.y = -1.3 + sy * 0.5; pivot.add(cap);
-  }
-  const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.8, 6), goldMat); rope.position.y = -0.38; pivot.add(rope);
-  const tassel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.12, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0xf7c948, emissive: 0x4a2c00 })); tassel.position.y = -2.0; pivot.add(tassel);
-  scene.add(pivot); lanterns.push({ pivot, phase });
+CasinoRender.lamp(scene, -6, -5.8); CasinoRender.lamp(scene, 6, -5.8);
+for (const radius of [7.13, 7.84]) {
+ const trim = new THREE.Mesh(new THREE.TorusGeometry(radius,.035,8,128),goldMat);
+ trim.rotation.x=Math.PI/2; trim.scale.set(1.15,.8,1); trim.position.y=.06; scene.add(trim);
 }
-makeLantern(-6.0, 3.7, -4.6, 0.95, 0); makeLantern(6.0, 3.7, -4.6, 0.95, 2);
-makeLantern(-4.0, 4.1, -6.0, 0.75, 1); makeLantern(4.0, 4.1, -6.0, 0.75, 3);
+const stitches = [];
+for (let i=0;i<240;i++) {
+ const a=i/240*Math.PI*2, b=a+.012;
+ stitches.push(Math.cos(a)*7.5*1.15,.385,Math.sin(a)*7.5*.8,Math.cos(b)*7.5*1.15,.385,Math.sin(b)*7.5*.8);
+}
+const stitchGeo = new THREE.BufferGeometry(); stitchGeo.setAttribute('position',new THREE.Float32BufferAttribute(stitches,3));
+scene.add(new THREE.LineSegments(stitchGeo,new THREE.LineBasicMaterial({color:0x8c8062})));
 
 // ======================================================================
 //  Cartas
@@ -200,7 +192,7 @@ function faceTex(rank, suit) {
 const backTex = (() => {
   const W = 320, H = 448, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
   g.fillStyle = '#fffaf0'; g.fillRect(0, 0, W, H);
-  g.fillStyle = '#a3111f'; g.fillRect(16, 16, W - 32, H - 32);
+  g.fillStyle = '#143f36'; g.fillRect(16, 16, W - 32, H - 32);
   g.save(); g.beginPath(); g.rect(16, 16, W - 32, H - 32); g.clip();
   g.strokeStyle = 'rgba(247,201,72,.75)'; g.lineWidth = 2;
   for (let i = -H; i < W + H; i += 26) {
@@ -214,7 +206,7 @@ const backTex = (() => {
   g.fillStyle = gr; g.beginPath(); g.arc(W / 2, H / 2, 70, 0, 7); g.fill();
   g.strokeStyle = '#6b3f00'; g.lineWidth = 3; g.beginPath(); g.arc(W / 2, H / 2, 58, 0, 7); g.stroke();
   g.fillStyle = '#7a0f1a'; g.font = 'bold 76px "Microsoft YaHei","PingFang SC","Noto Sans CJK SC",serif';
-  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('福', W / 2, H / 2 + 4);
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('♠', W / 2, H / 2 + 4);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 })();
 const edgeMat = new THREE.MeshStandardMaterial({ color: 0xf4efe0 });
@@ -613,13 +605,13 @@ for (const n of Art.names) document.documentElement.style.setProperty('--ico-' +
 //  Loop
 // ======================================================================
 updateStats(false); renderChips(state.bet); updateDeck(); showPanel('bet');
+if (state.balance < MIN_BET) showBroke();
 const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   stepTweens(dt); stepCoins(dt);
-  for (const l of lanterns) l.pivot.rotation.z = Math.sin(t * 0.9 + l.phase) * 0.07;
   chipBump *= 0.86; betGroup.scale.setScalar(1 + chipBump * 0.1);
-  camera.position.x += (camBase.x + mouse.x * 1.8 + Math.sin(t * 0.25) * 0.2 - camera.position.x) * 0.05;
+  camera.position.x += (camBase.x + mouse.x * .6 + (reducedMotion.matches ? 0 : Math.sin(t * 0.25) * 0.08) - camera.position.x) * 0.05;
   camera.position.y += (camBase.y - mouse.y * 0.8 - camera.position.y) * 0.05;
   camera.position.z = camBase.z;
   camera.lookAt(look);

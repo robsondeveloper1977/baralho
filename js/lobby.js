@@ -3,6 +3,9 @@
 'use strict';
 
 const GAMES = [
+  { id: 'oceano', name: 'Tesouros do Oceano', href: 'tesouros-do-oceano.html', available: true,
+    desc: 'Explore cinco rolos de tesouros. Encontre pérolas para liberar oito giros grátis.',
+    tags: ['20 linhas', 'Wild', 'Giros grátis'], art: 'ocean' },
   {
     id: 'vinte-e-um', name: 'Vinte e Um', href: 'vinte-e-um.html', available: true,
     desc: 'O clássico Blackjack em 3D. Chegue a 21 sem estourar e vença o dealer.',
@@ -42,7 +45,7 @@ GAMES.forEach((g, i) => {
   el.style.setProperty('--i', i);
   if (g.available) el.href = g.href; else el.setAttribute('aria-disabled', 'true');
   el.innerHTML = `
-    <div class="art">${ART[g.art] || ''}${g.available ? '' : '<span class="lock" aria-hidden="true">🔒</span><span class="ribbon">EM BREVE</span>'}</div>
+    <div class="art">${g.available ? `<img class="table-preview" src="${g.art === 'ocean' ? 'img/ocean-preview.svg' : 'img/' + (g.art === 'bj' ? 'blackjack' : 'roulette') + '-table.png'}" alt="Prévia de ${esc(g.name)}" width="1000" height="550" decoding="async">` : ART[g.art] || ''}${g.available ? '' : '<span class="lock" aria-hidden="true">🔒</span><span class="ribbon">EM BREVE</span>'}</div>
     <div class="info">
       <h3>${esc(g.name)}</h3>
       <p>${esc(g.desc)}</p>
@@ -54,14 +57,11 @@ GAMES.forEach((g, i) => {
 });
 
 // ---------- fichas salvas pelo jogo (só leitura) ----------
-// Sem saldo salvo (ou abaixo da aposta mínima) o jogo recomeça com 1.000, então o menu mostra o mesmo.
-let wallet = 1000;
-try {
-  const raw = localStorage.getItem('vu21.balance');
-  const v = raw === null ? NaN : Number(JSON.parse(raw));
-  if (Number.isFinite(v) && v >= 50) wallet = Math.round(v);
-} catch {}
-document.getElementById('wallet').textContent = wallet.toLocaleString('pt-BR');
+// Read the shared wallet without automatically refilling low balances.
+function refreshWallet() { document.getElementById('wallet').textContent = Common.wallet.get().toLocaleString('pt-BR'); }
+refreshWallet();
+addEventListener('pageshow', refreshWallet);
+addEventListener('storage', e => { if (e.key === Common.wallet.KEY) refreshWallet(); });
 
 // ---------- gráficos decorativos ----------
 Art.hydrate();

@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "node serve.mjs",
-    "test": "node --test test/logic.test.mjs test/roulette.test.mjs"
+    "test": "node --test test/logic.test.mjs test/roulette.test.mjs test/slots.test.mjs"
   },
   "license": "ISC",
   "dependencies": {

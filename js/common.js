@@ -92,19 +92,8 @@ const Common = (() => {
     return tigerCache[mood];
   }
 
-  /** Carteira de fichas compartilhada entre todos os jogos (mesma chave do Vinte e Um). */
-  const START_BALANCE = 1000, MIN_BALANCE = 50;
-  const wallet = {
-    get() {
-      try {
-        const raw = localStorage.getItem('vu21.balance');
-        const v = raw === null ? NaN : Number(JSON.parse(raw));
-        return Number.isFinite(v) && v >= MIN_BALANCE ? Math.round(v) : START_BALANCE;
-      } catch { return START_BALANCE; }
-    },
-    set(v) { try { localStorage.setItem('vu21.balance', JSON.stringify(Math.round(v))); } catch {} },
-    START: START_BALANCE,
-  };
+  /** Shared wallet, with automatic migration of the original balance key. */
+  const wallet = CasinoWallet;
 
   /** Faíscas douradas subindo no fundo (CSS .spark). */
   function sparks(box, n = 26) {

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06272d">
+<meta name="description" content="Explore Tesouros do Oceano: cinco rolos, vinte linhas e rodadas grátis com fichas virtuais.">
+<title>Tesouros do Oceano · Salão da Fortuna</title>
+<link rel="stylesheet" href="css/slots.css">
+</head>
+<body>
+<div id="ocean-scene" aria-hidden="true"></div>
+<div class="ocean-rays" aria-hidden="true"></div>
+<header class="navigation"><a href="index.html" class="back">‹ <span>SALÃO DA FORTUNA</span></a><span class="nav-caption">A COLEÇÃO · Nº 03</span><div class="tools"><button id="sound" aria-label="Desativar som" aria-pressed="true">Som ligado</button><button id="help" aria-label="Abrir regras e pagamentos">?</button></div></header>
+<main>
+<section class="title-block"><p class="eyebrow">UMA EXPEDIÇÃO À FORTUNA</p><h1>Tesouros <em>do Oceano</em></h1><p class="subtitle">Sob as ondas, uma nova descoberta a cada giro.</p></section>
+<section class="machine" aria-label="Caça-níquel Tesouros do Oceano">
+<div class="machine-top"><span><i></i> 20 LINHAS ATIVAS</span><span id="bonus">3 PÉROLAS · 8 GIROS GRÁTIS</span><button id="speed" aria-pressed="false" title="Reduzir duração dos giros">Rápido</button></div>
+<div class="reel-frame"><div class="reels" id="reels" role="group" aria-label="Resultado dos cinco rolos"></div><svg id="payline" viewBox="0 0 500 300" preserveAspectRatio="none" aria-hidden="true"><polyline points="" /></svg><div class="glass" aria-hidden="true"></div></div>
+<div class="result-bar"><span class="compass" aria-hidden="true">✦</span><p id="status" role="status" aria-live="polite">Escolha sua aposta e descubra o oceano.</p><button id="lines" hidden>Ver linhas</button></div>
+<div class="dashboard">
+<div class="metric balance"><span>SALDO EM FICHAS</span><strong id="balance">—</strong></div>
+<div class="bet-box"><label for="bet">APOSTA TOTAL</label><div><button id="less" aria-label="Diminuir aposta">−</button><select id="bet" aria-label="Aposta total"></select><button id="more" aria-label="Aumentar aposta">+</button></div><small>Dividida entre 20 linhas</small></div>
+<div class="metric prize"><span>ÚLTIMO PRÊMIO</span><strong id="prize">0</strong></div>
+<button id="spin" class="spin"><span id="spin-label">GIRAR</span><small id="spin-hint">ESPAÇO OU ENTER</small></button>
+</div>
+</section>
+<section class="features" aria-label="Símbolos especiais"><article><img id="wild-preview" alt="" width="64" height="64"><div><h2>O poder do tridente</h2><p>Wild substitui símbolos comuns.</p></div></article><span class="feature-divider"></span><article><img id="scatter-preview" alt="" width="64" height="64"><div><h2>Pérolas que surpreendem</h2><p>3 ou mais liberam 8 giros grátis.</p></div></article></section>
+<p class="disclaimer">Somente entretenimento com fichas virtuais. Sem dinheiro real ou prêmios monetários. 18+.</p>
+<button id="refill" hidden>Recomeçar com 1.000 fichas virtuais</button>
+</main>
+<dialog id="rules" aria-labelledby="rules-title"><div class="dialog-head"><div><p class="eyebrow">GUIA DA EXPEDIÇÃO</p><h2 id="rules-title">Regras e pagamentos</h2></div><button id="close-help" aria-label="Fechar regras">×</button></div>
+<p>As 20 linhas estão sempre ativas. Cada linha recebe 1/20 da aposta total. Sequências de 3, 4 ou 5 símbolos iguais pagam da esquerda para a direita, começando no primeiro rolo. Só a combinação de maior valor é paga em cada linha; linhas diferentes somam.</p>
+<div class="table-wrap"><table><caption>Multiplicadores da aposta por linha</caption><thead><tr><th scope="col">Símbolo</th><th scope="col">3</th><th scope="col">4</th><th scope="col">5</th></tr></thead><tbody id="paytable"></tbody></table></div>
+<p>O Tridente Wild substitui qualquer símbolo, exceto a Pérola Scatter. Três ou mais pérolas em qualquer posição concedem 8 giros grátis, inclusive durante o bônus. Elas não pagam fichas diretamente. A aposta do bônus fica travada no valor do giro que o iniciou.</p>
+<p>Os giros grátis são iniciados pelo botão Girar, sem débito de fichas. O saldo, resultado e bônus são salvos juntos antes da animação. Reabrir a página mostra o último resultado sem cobrar ou pagar de novo.</p>
+<h3>As 20 linhas</h3><div class="line-gallery" id="line-gallery"></div>
+<p class="fine-print">Os símbolos têm frequências diferentes. A animação não influencia o sorteio. Não há garantia de prêmio.</p></dialog>
+<script src="lib/three.global.js"></script><script src="js/casino-render.js"></script><script src="js/wallet.js"></script><script src="js/slots-logic.js"></script><script src="js/slots-art.js"></script><script src="js/slots-scene.js"></script><script src="js/slots-audio.js"></script><script src="js/slots.js"></script>
+</body></html>
