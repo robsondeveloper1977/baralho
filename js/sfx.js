@@ -62,6 +62,9 @@ const Sfx = (() => {
     tick() { tone(1500 + Math.random() * 300, 0.035, { type: 'square', vol: 0.035 }); },
     whoosh() { noise(0.7, { vol: 0.16, freq: 900, q: 0.4 }); },
     drop() { tone(220, 0.09, { type: 'triangle', vol: 0.16, to: 90 }); noise(0.08, { vol: 0.16, freq: 1800, q: 1 }); },
+    // Foguete do Tigre: tom que sobe com o multiplicador e explosão
+    rise(m) { tone(170 + 150 * Math.log2(Math.max(1, m)), 0.11, { type: 'triangle', vol: 0.05 }); noise(0.1, { vol: 0.05, freq: 700, q: 0.5 }); },
+    boom() { noise(0.7, { vol: 0.5, freq: 260, q: 0.4 }); noise(0.35, { vol: 0.25, freq: 2200, q: 0.5 }); tone(140, 0.55, { type: 'sawtooth', vol: 0.16, to: 38 }); },
     click() { tone(660, 0.07, { type: 'triangle', vol: 0.1 }); },
     card() { noise(0.09, { vol: 0.28, freq: 2600, q: 0.7 }); tone(180, 0.06, { type: 'triangle', vol: 0.06 }); },
     flip() { noise(0.14, { vol: 0.22, freq: 3800, q: 0.6 }); },
