@@ -6,14 +6,14 @@
   'use strict';
   const BETS = [20, 40, 100, 200, 500];
   const SYMBOLS = [
-    { id:'shell', name:'Concha', weight:26, pays:[5,18,55] },
-    { id:'star', name:'Estrela-do-mar', weight:22, pays:[6,24,75] },
-    { id:'fish', name:'Peixe dourado', weight:18, pays:[10,35,110] },
-    { id:'gem', name:'Cristal', weight:14, pays:[14,60,190] },
-    { id:'chest', name:'Baú', weight:9, pays:[27,120,410] },
+    { id:'chip', name:'Ficha de pôquer', weight:26, pays:[5,18,55] },
+    { id:'die', name:'Dado', weight:22, pays:[6,24,75] },
+    { id:'bell', name:'Sino da sorte', weight:18, pays:[10,35,110] },
+    { id:'diamond', name:'Diamante', weight:14, pays:[14,60,190] },
+    { id:'vault', name:'Cofre', weight:9, pays:[27,120,410] },
     { id:'crown', name:'Coroa', weight:6, pays:[44,190,650] },
-    { id:'wild', name:'Tridente Wild', weight:3, pays:[55,270,1100] },
-    { id:'scatter', name:'Pérola Scatter', weight:2, pays:[] }
+    { id:'wild', name:'Curinga Wild', weight:3, pays:[55,270,1100] },
+    { id:'scatter', name:'Roleta Scatter', weight:2, pays:[] }
   ];
   const LINES = [
     [1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],
