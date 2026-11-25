@@ -42,23 +42,15 @@ test('aposta paga é debitada uma vez e saldo insuficiente é rejeitado',()=>{
  assert.equal(L.spin({balance:1000},20,()=>0).balance,2080);
  assert.throws(()=>L.spin({balance:19},20));assert.throws(()=>L.spin({balance:1000},30));
 });
-test('carteira migra zero sem reposição e salva resultado + saldo atomicamente',()=>{
- const map=new Map([['vu21.balance','0']]);let writes=0;
- const wallet=createWallet(()=>({getItem:k=>map.get(k)??null,setItem:(k,v)=>{writes++;map.set(k,v);}}));
- assert.equal(wallet.get(),0);wallet.set(1000);writes=0;
- const saved=wallet.commit(a=>L.spin(a,20,()=>0));
- assert.equal(writes,1);assert.deepEqual(wallet.read(),saved);
- assert.equal(wallet.read().balance,2080);assert.equal(wallet.read().balance,2080);
- wallet.set(1500);assert.deepEqual(wallet.read().slots,saved.slots);
+test('carteira preserva saldo zero na migração',()=>{
+ const map=new Map([['vu21.balance','0']]);
+ const wallet=createWallet(()=>({getItem:k=>map.get(k)??null}));
+ assert.equal(wallet.get(),0);
+ map.set('vu21.wallet.v2',JSON.stringify({balance:42,slots:null}));
+ assert.equal(wallet.get(),42);
 });
-test('falha de persistência não retorna um giro confirmado',()=>{
- const wallet=createWallet(()=>({getItem:()=>null,setItem:()=>{throw Error('Quota');}}));
- assert.throws(()=>wallet.commit(a=>L.spin(a,20,()=>0)),/Quota/);
- assert.equal(wallet.get(),1000);
-});
-
-test('older games tolerate unavailable storage; slot commits still fail safely',()=>{
+test('a carteira recusa apostas se não consegue salvar com segurança',async()=>{
  const wallet=createWallet(()=>{throw Error('Storage blocked');});
- assert.equal(wallet.get(),1000);assert.equal(wallet.set(500),null);
- assert.throws(()=>wallet.commit(a=>L.spin(a,20)),/Storage blocked/);
+ assert.equal(wallet.get(),1000);
+ await assert.rejects(wallet.transact(a=>L.spin(a,20)),/salvar rodadas/);
 });

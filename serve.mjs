@@ -14,9 +14,10 @@ const types = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
 };
 // Somente páginas .html da raiz e as pastas css/js/lib/img são servidas (nada de .git, node_modules, package.json…)
-const allowed = p => /^[\w-]+\.html$/.test(p) || /^(css|js|lib|img)[\\/][\w.\-\\/]+$/.test(p);
+const allowed = p => /^[\w-]+\.html$/.test(p) || p === 'sw.js' || p === 'manifest.webmanifest' || /^(css|js|lib|img)[\\/][\w.\-\\/]+$/.test(p);
 
 http.createServer(async (req, res) => {
   let p;

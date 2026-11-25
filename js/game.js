@@ -2,29 +2,30 @@
 (() => {
 'use strict';
 
-const { MIN_BET, value, total, isBlackjack, dealerShouldHit, Shoe, settle, chipBreakdown, maxBet } = Logic;
+const { MIN_BET, value, total, isBlackjack, Shoe, blackjackTurn, chipBreakdown, maxBet } = Logic;
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const fmt = n => Math.round(n).toLocaleString('pt-BR');
 const ranksOf = hand => hand.map(c => c.userData.rank);
-const START_BALANCE = 1000;
+const wallet = Common.wallet;
 
 const store = {
-  get(k, d) { if (k === 'balance') return Common.wallet.get(); try { const v = localStorage.getItem('vu21.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { if (k === 'balance') { Common.wallet.set(v); return; } try { localStorage.setItem('vu21.' + k, JSON.stringify(v)); } catch {} },
+  get(k, d) { try { const v = localStorage.getItem('vu21.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('vu21.' + k, JSON.stringify(v)); } catch {} },
 };
 
 // ======================================================================
 //  Estado
 // ======================================================================
 const state = {
-  balance: store.get('balance', START_BALANCE),
+  balance: wallet.get(),
   bet: store.get('bet', MIN_BET),
   lastWin: 0,
-  phase: 'bet',               // bet | deal | player | busy | dealer | over
+  phase: 'loading',
   hands: { p: [], d: [] },
   hidden: null,               // carta virada do dealer
-  doubled: false,
+  revision: 0,
+  saving: false,
   shoe: new Shoe(4),
 };
 // Low balances are preserved; only the explicit restart button refills chips.
@@ -36,14 +37,12 @@ if (state.bet % MIN_BET) state.bet = MIN_BET;
 // ======================================================================
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer = new THREE.WebGLRenderer({ antialias: !CasinoQuality.isLight(), alpha: true });
 } catch (err) {
   $('fallback').style.display = 'grid';
   console.error(err);
   return;
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.95;
@@ -70,7 +69,7 @@ function resize() {
   look.z = a < 1 ? 2.2 : a < 1.4 ? 1.4 : 1.0;
   camera.updateProjectionMatrix();
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize', resize); CasinoQuality.configure(renderer, resize);
 
 scene.add(new THREE.HemisphereLight(0xffe6bf, 0x132a20, 0.8));
 const spot = new THREE.SpotLight(0xfff0d0, 160, 40, 0.7, 0.55, 1.5);
@@ -307,6 +306,7 @@ const coinMat = new THREE.MeshStandardMaterial({ color: 0xf2b928, metalness: 0.5
 const coinHoleMat = new THREE.MeshStandardMaterial({ color: 0x3a0610 });
 const coins = [];
 function coinBurst(n) {
+  if (CasinoQuality.isLight()) return;
   for (let i = 0; i < n; i++) {
     const m = new THREE.Mesh(coinGeo, coinMat); m.add(new THREE.Mesh(coinHole, coinHoleMat));
     m.position.set((Math.random() - 0.5) * 7, 6 + Math.random() * 3, (Math.random() - 0.5) * 4 - 0.2);
@@ -367,8 +367,7 @@ function updateStats(animate = true) {
   animateNumber(ui.bet, state.bet, animate ? 250 : 0);
   animateNumber(ui.won, state.lastWin, animate && state.lastWin ? 900 : 0);
   ui.won.classList.toggle('has', state.lastWin > 0);
-  store.set('balance', state.balance); store.set('bet', state.bet);
-  const bettingOpen = state.phase === 'bet';
+  const bettingOpen = state.phase === 'bet' && !state.saving;
   const mb = maxBet(state.balance);
   $('bm').disabled = !bettingOpen || state.bet <= MIN_BET;
   $('bp').disabled = !bettingOpen || state.bet + MIN_BET > mb;
@@ -430,8 +429,7 @@ const slot = (who, i, n) => {
   return new THREE.Vector3((i - (n - 1) / 2) * spread, 0.02 + i * 0.018, who === 'p' ? 2.0 : -2.2);
 };
 
-async function draw(who, faceUp = true) {
-  const { rank, suit } = state.shoe.draw();
+async function draw(who, { rank, suit }, faceUp = true) {
   const c = makeCard(rank, suit);
   c.position.copy(deckPos).add(new THREE.Vector3(0, 0.2, 0)); scene.add(c);
   const hand = state.hands[who]; hand.push(c);
@@ -456,51 +454,9 @@ function clearTable() {
   ui.badge.p.hidden = ui.badge.d.hidden = true;
 }
 
-async function startRound() {
-  if (state.phase !== 'bet') return;
-  if (state.balance < MIN_BET) { showBroke(); return; }
-  state.bet = Math.max(MIN_BET, Math.min(state.bet, maxBet(state.balance)));
-  state.phase = 'deal'; state.doubled = false; Sfx.unlock();
-  showPanel(null); hideBanner(); mascot('idle');
-  clearTable();
-  state.balance -= state.bet; state.lastWin = 0; updateStats();
-  if (state.shoe.needsShuffle()) { state.shoe.shuffle(); updateDeck(); toast('Baralho embaralhado'); }
-  await sleep(380);
-  await draw('p'); await draw('d'); await draw('p'); await draw('d', false);
-  if (isBlackjack(ranksOf(state.hands.p)) || isBlackjack(ranksOf(state.hands.d))) { await finish(); return; }
-  state.phase = 'player'; showPanel('play'); refreshPlayButtons();
-}
 function refreshPlayButtons() {
-  const first = state.hands.p.length === 2;
-  $('dbl').disabled = !(first && state.balance >= state.bet);
-}
-async function hit() {
-  if (state.phase !== 'player') return;
-  state.phase = 'busy'; $('hit').disabled = $('stand').disabled = $('dbl').disabled = true;
-  await draw('p');
-  const t = total(ranksOf(state.hands.p));
-  if (t > 21) await finish();
-  else if (t === 21) await dealerPlay();
-  else { state.phase = 'player'; $('hit').disabled = $('stand').disabled = false; refreshPlayButtons(); }
-}
-async function stand() {
-  if (state.phase !== 'player') return;
-  state.phase = 'busy'; await dealerPlay();
-}
-async function dbl() {
-  if (state.phase !== 'player' || state.hands.p.length !== 2 || state.balance < state.bet) return;
-  state.phase = 'busy'; Sfx.chip();
-  state.balance -= state.bet; state.bet *= 2; state.doubled = true;
-  updateStats(); renderChips(state.bet); toast('Aposta dobrada!');
-  await draw('p');
-  if (total(ranksOf(state.hands.p)) > 21) await finish(); else await dealerPlay();
-}
-async function dealerPlay() {
-  state.phase = 'dealer'; showPanel(null);
-  await revealHidden();
-  while (dealerShouldHit(ranksOf(state.hands.d))) { await sleep(420); await draw('d'); }
-  await sleep(250);
-  await finish();
+  $('hit').disabled = $('stand').disabled = state.saving;
+  $('dbl').disabled = state.saving || state.hands.p.length !== 2 || state.balance < state.bet;
 }
 
 const RESULTS = {
@@ -512,37 +468,111 @@ const RESULTS = {
   'dealer-blackjack': { t: 'BLACKJACK DO DEALER',   cls: 'lose', mood: 'sad',   anim: 'shake' },
   'bust':             { t: 'ESTOUROU!',             cls: 'lose', mood: 'sad',   anim: 'shake' },
 };
-async function finish() {
-  state.phase = 'over'; showPanel(null);
-  await revealHidden();
-  const res = settle(ranksOf(state.hands.p), ranksOf(state.hands.d), state.bet);
+function showResult({ result: res, bet }, effects = true) {
   const info = RESULTS[res.outcome];
-  state.balance += res.payout;
   state.lastWin = Math.max(0, res.net);
-  const staked = state.bet;
-  if (state.doubled) state.bet /= 2;
-  state.doubled = false;
-
-  banner(info.t, res.net > 0 ? `+${fmt(res.net)}` : res.net < 0 ? `−${fmt(staked)}` : 'Aposta devolvida', info.cls);
+  banner(info.t, res.net > 0 ? `+${fmt(res.net)}` : res.net < 0 ? `−${fmt(bet)}` : 'Aposta devolvida', info.cls);
+  if (!effects) return;
   mascot(info.mood, info.anim);
   if (res.outcome === 'blackjack') { Sfx.blackjack(); coinBurst(70); }
   else if (res.net > 0) { Sfx.win(res.net >= 250); coinBurst(Math.min(60, 14 + Math.floor(res.net / 20))); }
   else if (res.net < 0) Sfx.lose();
   else Sfx.push();
 
-  state.bet = Math.max(MIN_BET, Math.min(state.bet, maxBet(state.balance)));
-  state.phase = 'bet';
-  updateStats(); renderChips(state.bet);
-  if (state.lastWin) flashStat(ui.won);
-  if (state.balance < MIN_BET) { setTimeout(showBroke, 1800); showPanel(null); }
-  else showPanel('bet');
 }
+
+function refreshTable() {
+  const playing = state.phase === 'player';
+  if (!playing) state.bet = Math.max(MIN_BET, Math.min(state.bet, maxBet(state.balance)));
+  if (openModal?.id === 'broke' && (playing || state.balance >= MIN_BET)) closeModal();
+  showPanel(playing ? 'play' : 'bet');
+  refreshPlayButtons(); updateStats(false); renderChips(state.bet);
+  if (!playing && state.balance < MIN_BET && !openModal) showBroke();
+}
+
+async function restoreWallet() {
+  if (state.saving) return;
+  let account;
+  try { account = await wallet.snapshot(); }
+  catch { toast('Não foi possível abrir a carteira.'); return; }
+  if (state.saving) return;
+  if (state.phase === 'loading') state.phase = 'bet';
+  const saved = account.blackjack;
+  state.balance = account.balance;
+  const hand = saved?.hand;
+  if (hand && hand.revision !== state.revision) {
+    if (!hand.result || state.phase !== 'bet') {
+      state.bet = hand.bet / (hand.doubled && hand.result ? 2 : 1);
+    }
+    clearTable(); hideBanner();
+    state.revision = hand.revision;
+    state.shoe.cards = saved.shoe;
+    state.phase = hand.result ? 'bet' : 'player';
+    state.lastWin = 0;
+    for (const [who, cards] of [['p', hand.player], ['d', hand.dealer]]) {
+      state.hands[who] = cards.map(({ rank, suit }, i) => {
+        const card = makeCard(rank, suit);
+        card.position.copy(slot(who, i, cards.length));
+        if (who === 'd' && i === 1 && !hand.result) { card.rotation.z = Math.PI; state.hidden = card; }
+        scene.add(card);
+        return card;
+      });
+    }
+    updateDeck(); updateBadges();
+    if (hand.result) showResult(hand, false);
+  }
+  refreshTable();
+}
+
+async function play(action) {
+  if (state.saving || state.phase !== (action === 'deal' ? 'bet' : 'player')) return;
+  Sfx.unlock();
+  state.saving = true;
+  updateStats(false); refreshPlayButtons();
+  try {
+    const account = await wallet.transact(current => blackjackTurn(current, { action, bet: state.bet, revision: state.revision }));
+    const { hand, shoe } = account.blackjack;
+    state.balance = account.balance;
+    state.shoe.cards = shoe;
+    state.phase = 'busy';
+    state.bet = hand.bet;
+    state.lastWin = 0;
+    showPanel(null); updateStats(); renderChips(state.bet);
+    if (action === 'deal') {
+      hideBanner(); mascot('idle'); clearTable();
+      await sleep(180);
+      await draw('p', hand.player[0]); await draw('d', hand.dealer[0]);
+      await draw('p', hand.player[1]); await draw('d', hand.dealer[1], false);
+    } else if (action !== 'stand') {
+      if (action === 'double') { Sfx.chip(); toast('Aposta dobrada!'); }
+      await draw('p', hand.player.at(-1));
+    }
+    if (hand.result) {
+      await revealHidden();
+      for (const card of hand.dealer.slice(state.hands.d.length)) await draw('d', card);
+      showResult(hand);
+      if (hand.doubled) state.bet /= 2;
+    }
+    state.phase = hand.result ? 'bet' : 'player';
+    state.revision = hand.revision;
+    if (state.lastWin) flashStat(ui.won);
+  } catch (error) {
+    toast(error.message || 'Não foi possível salvar a rodada.');
+  } finally {
+    state.saving = false;
+    restoreWallet();
+  }
+}
+const startRound = () => play('deal');
+const hit = () => play('hit');
+const stand = () => play('stand');
+const dbl = () => play('double');
 
 // ---------- apostas ----------
 function setBet(v) {
-  if (state.phase !== 'bet') return;
+  if (state.phase !== 'bet' || state.saving) return;
   const nb = Math.max(MIN_BET, Math.min(maxBet(state.balance), v));
-  if (nb !== state.bet) { state.bet = nb; Sfx.chip(); updateStats(); renderChips(nb); }
+  if (nb !== state.bet) { state.bet = nb; store.set('bet', nb); Sfx.chip(); updateStats(); renderChips(nb); }
   else updateStats();
 }
 
@@ -550,9 +580,9 @@ function setBet(v) {
 let openModal = null;
 function showModal(id) { openModal = $(id); openModal.hidden = false; }
 function closeModal() { if (openModal) { openModal.hidden = true; openModal = null; } }
-// voltar ao menu: com rodada em andamento pede confirmação (a aposta já foi descontada)
+// A mão salva pode ser retomada ao voltar para a mesa.
 $('btnBack').addEventListener('click', e => {
-  if (state.phase !== 'bet') { e.preventDefault(); showModal('leaveModal'); }
+  if (state.saving) { e.preventDefault(); toast('Aguarde o fim da animação.'); }
 });
 function showBroke() { if (openModal) closeModal(); showModal('broke'); }
 document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => {
@@ -560,10 +590,15 @@ document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e =
 }));
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal));
 $('btnHelp').onclick = () => { Sfx.click(); showModal('rules'); };
-$('restart').onclick = () => {
-  closeModal(); Sfx.unlock(); Sfx.win();
-  state.balance = START_BALANCE; state.bet = MIN_BET; state.lastWin = 0;
-  updateStats(); renderChips(state.bet); showPanel('bet'); mascot('happy', 'bounce');
+$('restart').onclick = async () => {
+  if (state.saving) return;
+  Sfx.unlock(); state.saving = true;
+  try {
+    await wallet.transact(account => account.balance < MIN_BET ? { ...account, balance: wallet.START } : account);
+    closeModal(); Sfx.win(); state.bet = MIN_BET; state.lastWin = 0;
+    mascot('happy', 'bounce');
+  } catch (error) { toast(error.message || 'Não foi possível repor as fichas.'); }
+  finally { state.saving = false; restoreWallet(); }
 };
 function syncSoundIcon() { $('btnSound').textContent = Sfx.muted ? '🔇' : '🔊'; }
 function toggleSound() { Sfx.setMuted(!Sfx.muted); syncSoundIcon(); if (!Sfx.muted) Sfx.click(); }
@@ -605,9 +640,15 @@ for (const n of Art.names) document.documentElement.style.setProperty('--ico-' +
 //  Loop
 // ======================================================================
 updateStats(false); renderChips(state.bet); updateDeck(); showPanel('bet');
-if (state.balance < MIN_BET) showBroke();
+restoreWallet();
+wallet.watch(restoreWallet);
+addEventListener('pageshow', event => { if (event.persisted) restoreWallet(); });
 const clock = new THREE.Clock();
-renderer.setAnimationLoop(() => {
+const renderFrame = CasinoQuality.drawWhenDue(() => {
+  renderer.render(scene, camera);
+  placeBadges();
+});
+renderer.setAnimationLoop(time => {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   stepTweens(dt); stepCoins(dt);
   chipBump *= 0.86; betGroup.scale.setScalar(1 + chipBump * 0.1);
@@ -615,8 +656,7 @@ renderer.setAnimationLoop(() => {
   camera.position.y += (camBase.y - mouse.y * 0.8 - camera.position.y) * 0.05;
   camera.position.z = camBase.z;
   camera.lookAt(look);
-  renderer.render(scene, camera);
-  placeBadges();
+  renderFrame(time);
 });
 
 })();

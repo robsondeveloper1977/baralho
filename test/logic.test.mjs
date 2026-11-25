@@ -2,6 +2,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import Logic from '../js/logic.js';
 
+test('blackjack resumes a saved hand and rejects a decision from a stale tab', () => {
+  const card = rank => ({ rank, suit: '♠' });
+  const shoe = Array(42).fill(card('2')).concat(['4', '8', '7', '9', '10'].map(card));
+  const initial = { balance: 1000, slots: { free: 3 }, blackjack: { shoe } };
+  const deal = Logic.blackjackTurn(initial, { action: 'deal', bet: 50, revision: 0 });
+  assert.equal(deal.balance, 950);
+  assert.equal(deal.blackjack.hand.result, null);
+
+  const restored = JSON.parse(JSON.stringify(deal));
+  const settled = Logic.blackjackTurn(restored, { action: 'double', revision: 1 });
+  assert.equal(settled.balance, 1100);
+  assert.equal(settled.blackjack.hand.result.outcome, 'win');
+  assert.equal(settled.blackjack.hand.bet, 100);
+  assert.deepEqual(settled.slots, initial.slots);
+  assert.equal(deal.blackjack.hand.player.length, 2);
+  assert.throws(() => Logic.blackjackTurn(settled, { action: 'stand', revision: 1 }), /outra aba/);
+});
+
 const { total, isBlackjack, isSoft, settle, Shoe, chipBreakdown, maxBet, dealerShouldHit } = Logic;
 
 test('total: ases valem 11 e viram 1 quando estoura', () => {

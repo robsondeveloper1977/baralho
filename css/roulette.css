@@ -40,7 +40,7 @@ body.stack #side{left:10px;right:10px;top:calc(68px + var(--wheel-h));bottom:cal
 #board{display:grid;gap:3px;padding:10px;border-radius:18px;flex:none;position:relative;
   background:radial-gradient(120% 140% at 50% 0%,#a01728cc,#5a0a16dd) padding-box,var(--edge) border-box;border:3px solid transparent;box-shadow:0 12px 30px #000b}
 #board.h{grid-template-columns:minmax(30px,.75fr) repeat(12,1fr) minmax(38px,.85fr);grid-auto-rows:minmax(36px,5.4vh)}
-#board.v{grid-template-columns:repeat(3,1fr) 0.8fr 0.9fr;grid-auto-rows:minmax(34px,4.6vh)}
+#board.compact-board{grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(10,minmax(0,1fr))}
 .cell{position:relative;display:grid;place-items:center;min-width:0;border-radius:8px;border:2px solid #f7c94855;color:#fff;font:900 clamp(12px,1.5vw,18px) inherit;font-family:inherit;
   text-shadow:0 1px 2px #000a;transition:transform .12s,filter .12s,box-shadow .12s}
 .cell:hover{transform:translateY(-1px);filter:brightness(1.25)}
@@ -51,7 +51,6 @@ body.stack #side{left:10px;right:10px;top:calc(68px + var(--wheel-h));bottom:cal
 .cell.out{background:linear-gradient(#4a0f1a,#2a060d);font-size:clamp(10px,1.15vw,14px);letter-spacing:.06em;padding:0 3px;line-height:1.1;text-align:center}
 .cell.out.red{background:linear-gradient(#e8303c,#8c1422)}.cell.out.black{background:linear-gradient(#34343c,#0c0c10)}
 .cell .lbl{position:relative;z-index:1}
-#board.v .cell.out .lbl{writing-mode:vertical-rl;transform:rotate(180deg)}
 .cell.hint{box-shadow:0 0 0 2px #fff3b0,0 0 14px #f7c948;filter:brightness(1.3)}
 .cell.lucky{border-color:#fff3b0;box-shadow:0 0 0 2px #f7c948,0 0 16px #f7c948cc;animation:luckypulse 1.4s ease-in-out infinite}
 .cell.lucky::after{content:"";position:absolute;right:1px;top:1px;width:46%;max-width:18px;aspect-ratio:1;background:var(--tiger) center/contain no-repeat;pointer-events:none}
@@ -80,7 +79,7 @@ body.stack #side{left:10px;right:10px;top:calc(68px + var(--wheel-h));bottom:cal
 #toast{top:78px}
 
 /* ---------- responsivo ---------- */
-body.stack #banner{top:calc(68px + var(--wheel-h) * .5) !important}
+body.stack:not(.compact) #banner{top:calc(68px + var(--wheel-h) * .5) !important}
 @media (max-width:760px){
   .medallion{width:62px;height:62px;border-width:3px}
   #luck{padding:7px 10px;gap:9px}
@@ -104,3 +103,54 @@ body.stack #banner{top:calc(68px + var(--wheel-h) * .5) !important}
   .chips{gap:4px}.chip{width:44px;height:44px;font-size:12px}
   .spin{width:76px;height:76px;font-size:14px}
 }
+
+body.rl.compact #topbar{padding:6px 8px}
+body.rl.compact .top-left{gap:6px}
+body.rl.compact #topbar .brand{display:flex}
+body.rl.compact .brand-mark,body.rl.compact .brand small{display:none}
+body.rl.compact .brand b{font-size:clamp(11px,3.5vw,16px);white-space:normal}
+body.rl.compact .back{height:40px;padding:0 8px;font-size:11px}
+body.rl.compact .top-actions{gap:4px}
+body.rl.compact .icon-btn{width:36px;height:40px}
+body.rl.stack.compact #side{
+  left:7px;right:7px;top:calc(var(--table-top) + var(--wheel-h));bottom:calc(var(--panel-h) + 3px);gap:4px;
+}
+body.rl.compact #board{flex:1;min-height:0;padding:4px;gap:2px}
+body.rl.compact .cell{font-size:14px;line-height:1.05}
+body.rl.compact .cell.out{font-size:10px;letter-spacing:0;padding:0 1px}
+body.rl.compact .mark{min-width:20px;height:20px;font-size:9px;border-width:2px;padding:0 2px}
+body.rl.compact #luck{min-height:36px;padding:3px 6px;gap:6px}
+body.rl.compact #medal,body.rl.compact .luck-sub{display:none}
+body.rl.compact .luck-body{display:flex;align-items:center;justify-content:space-between;gap:4px}
+body.rl.compact .luck-title{font-size:10px;gap:3px;letter-spacing:.04em;white-space:nowrap}
+body.rl.compact .luck-title .mult{font-size:10px;padding:0 3px}
+body.rl.compact .luck-nums,body.rl.compact #history{gap:3px;flex-wrap:nowrap}
+body.rl.compact .nball{width:23px;height:23px;min-width:23px;font-size:10px;padding:0}
+body.rl.compact .hist-box{max-width:none}
+body.rl.compact .hist-box small{display:none}
+body.rl.compact #history{min-height:0}
+body.rl.compact #history .nball:nth-child(n+3){display:none}
+body.rl.compact #panel{gap:4px;padding:4px 8px max(5px,env(safe-area-inset-bottom))}
+body.rl.compact .stats{width:min(100%,400px);gap:4px}
+body.rl.compact .stat{flex:1;min-width:0;padding:2px 4px}
+body.rl.compact .stat label{font-size:8px;letter-spacing:.07em}
+body.rl.compact .stat output{font-size:17px}
+body.rl.compact .controls{min-height:0}
+body.rl.compact #gBet{display:none}
+body.rl.compact #gBet.on{display:grid;grid-template-columns:1fr auto;width:min(100%,400px);gap:4px}
+body.rl.compact .chips{grid-column:1;padding:0;justify-content:center}
+body.rl.compact .chip{width:36px;height:36px;font-size:11px}
+body.rl.compact .chip::before{inset:3px}
+body.rl.compact .chip.sel{transform:none}
+body.rl.compact .tools{grid-column:1;gap:3px}
+body.rl.compact .mini{min-height:30px;padding:4px 6px;font-size:10px;letter-spacing:.02em}
+body.rl.compact #spin{grid-area:1/2/3/3;width:68px;height:60px;border-radius:10px;font-size:13px}
+body.rl.compact #spin small{display:none}
+body.rl.compact #banner{max-width:95vw;padding:5px 10px}
+body.rl.compact #banner .t,body.rl.compact #banner .a{font-size:14px}
+body.rl.compact #banner .sub{font-size:9px;letter-spacing:.02em}
+body.rl.compact #banner .nball{width:28px;height:28px;font-size:13px}
+body.rl.short #side{top:var(--table-top);right:8px;bottom:calc(var(--panel-h) + 3px);width:66vw;justify-content:initial;gap:4px}
+body.rl.short #board.h{grid-template-columns:repeat(14,minmax(0,1fr));grid-template-rows:repeat(5,minmax(0,1fr));grid-auto-rows:auto}
+body.rl.short .cell{font-size:12px}
+body.rl.short .cell.out{font-size:9px;white-space:nowrap}

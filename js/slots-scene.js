@@ -4,8 +4,7 @@
   const host=document.getElementById('ocean-scene');
   if (!window.THREE) return;
   let renderer;
-  try { renderer=new THREE.WebGLRenderer({alpha:true,antialias:true}); } catch { return; }
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+  try { renderer=new THREE.WebGLRenderer({alpha:true,antialias:!CasinoQuality.isLight()}); } catch { return; }
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
   const scene=new THREE.Scene();
@@ -33,13 +32,21 @@
   host.append(renderer.domElement);
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.render(scene,camera);}
-  addEventListener('resize',resize);resize();
+  addEventListener('resize',resize);
   let last=0;
   function frame(time){
     const dt=Math.min((time-last)/1000,.05);last=time;
     for(let i=0;i<count;i++){positions[i*3+1]+=dt*(.08+(i%4)*.025);if(positions[i*3+1]>16)positions[i*3+1]=-6;}
     geo.attributes.position.needsUpdate=true;renderer.render(scene,camera);
   }
-  function activity(){last=performance.now();renderer.setAnimationLoop(document.hidden||reduced.matches?null:frame);renderer.render(scene,camera);}
-  document.addEventListener('visibilitychange',activity);reduced.addEventListener('change',activity);activity();
+  function activity(){
+    last=performance.now();
+    particles.visible=!reduced.matches&&!CasinoQuality.isLight();
+    renderer.setAnimationLoop(document.hidden||!particles.visible?null:frame);
+    if(!document.hidden)renderer.render(scene,camera);
+  }
+  document.addEventListener('visibilitychange',activity);
+  reduced.addEventListener('change',activity);
+  CasinoQuality.configure(renderer,resize,{shadows:false,fullRatio:1.5});
+  CasinoQuality.watch(activity);
 })();

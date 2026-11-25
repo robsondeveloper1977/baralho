@@ -22,6 +22,7 @@
       </div>
     </div>
     <div class="top-actions">
+      <button class="icon-btn quality-control" data-quality type="button" aria-label="Modo gráfico leve" aria-pressed="false" title="Alternar modo gráfico">3D</button>
       <button class="icon-btn" id="btnSound" aria-label="Ligar ou desligar o som" title="Som (M)">🔊</button>
       <button class="icon-btn" id="btnHelp" aria-label="Regras e atalhos" title="Regras (?)">?</button>
     </div>
@@ -96,16 +97,17 @@
 <div class="modal" id="leaveModal" hidden role="dialog" aria-modal="true" aria-labelledby="leaveTitle">
   <div class="modal-card center">
     <h2 class="gold-text" id="leaveTitle">SAIR DA MESA?</h2>
-    <p>A bola já está girando. Se sair agora, você perde as apostas deste giro.</p>
+    <p>Depois que o giro é confirmado, o resultado e o saldo ficam salvos.</p>
     <div class="row">
       <button class="mini" data-close>Continuar</button>
-      <a class="mini danger" href="index.html">Sair e perder as apostas</a>
+      <a class="mini" href="index.html">Voltar ao salão</a>
     </div>
   </div>
 </div>
 
 <div id="fallback"><div><h2>WebGL indisponível</h2><p>Este jogo precisa de aceleração gráfica (WebGL). Ative-a no navegador e recarregue a página.</p></div></div>
 
+<script src="js/quality.js"></script>
 <script src="lib/three.global.js"></script>
 <script src="js/casino-render.js"></script>
 <script src="js/roulette-logic.js"></script>
@@ -115,5 +117,6 @@
 <script src="js/art.js"></script>
 <script src="js/coins.js"></script>
 <script src="js/roulette.js"></script>
+<script src="js/pwa.js"></script>
 </body>
 </html>

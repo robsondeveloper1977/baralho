@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/lobby.css">
 <link rel="stylesheet" href="css/casino.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="img/fortuna-192.png">
 </head>
 <body class="lobby">
 <div id="sparks" aria-hidden="true"></div>
@@ -38,6 +40,10 @@
     </div>
     <h1 class="gold-text">SUA MESA ESTÁ PRONTA</h1>
     <p>O ambiente de um cassino. A emoção de cada jogada.</p>
+    <div class="install-actions">
+      <button type="button" class="mini" id="install-app" hidden>Instalar salão</button>
+      <span id="offline-status" role="status"></span>
+    </div>
   </section>
 
   <section class="games" id="games" aria-label="Jogos disponíveis"></section>
@@ -49,10 +55,17 @@
 </main>
 
 <div id="leave" aria-hidden="true"></div>
+<dialog id="install-help" aria-labelledby="install-title">
+  <h2 id="install-title">Instalar o salão</h2>
+  <p>No iPhone, abra o site no Safari, toque em Compartilhar e escolha Adicionar à Tela de Início. Se aparecer, ative Abrir como App da Web.</p>
+  <p>No Android ou no computador, abra o menu do navegador e procure Instalar app ou Adicionar à tela inicial.</p>
+  <form method="dialog"><button class="mini">Fechar</button></form>
+</dialog>
 
 <script src="js/wallet.js"></script>
 <script src="js/common.js"></script>
 <script src="js/art.js"></script>
 <script src="js/lobby.js"></script>
+<script src="js/pwa.js"></script>
 </body>
 </html>

@@ -58,10 +58,14 @@ GAMES.forEach((g, i) => {
 
 // ---------- fichas salvas pelo jogo (só leitura) ----------
 // Read the shared wallet without automatically refilling low balances.
-function refreshWallet() { document.getElementById('wallet').textContent = Common.wallet.get().toLocaleString('pt-BR'); }
+async function refreshWallet() {
+  let balance = Common.wallet.get();
+  try { ({ balance } = await Common.wallet.snapshot()); } catch {}
+  document.getElementById('wallet').textContent = balance.toLocaleString('pt-BR');
+}
 refreshWallet();
 addEventListener('pageshow', refreshWallet);
-addEventListener('storage', e => { if (e.key === Common.wallet.KEY) refreshWallet(); });
+Common.wallet.watch(refreshWallet);
 
 // ---------- gráficos decorativos ----------
 Art.hydrate();

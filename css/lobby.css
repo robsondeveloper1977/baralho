@@ -125,3 +125,10 @@ body.leaving #leave{opacity:1}
   .game,.medallion,.go,.wheel,.wheel-tiger,.lantern,.hs,.floaty{animation:none!important}
   .game{transition:none}
 }
+
+.install-actions{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;color:#d6e9da}
+#install-app[hidden]{display:none}
+#install-help{width:min(460px,calc(100% - 24px));background:#0d2520;color:#f4eedb;border:1px solid #cfb579;border-radius:12px;padding:18px}
+#install-help::backdrop{background:#0009}
+#install-help h2{margin-top:0;font:24px Georgia,serif}
+#install-help p{line-height:1.5}

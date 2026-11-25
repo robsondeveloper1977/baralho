@@ -11,6 +11,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;background:re
 #topbar{background:linear-gradient(#08110eee,transparent);padding-top:16px}
 .back,.icon-btn,.mini,.badge,.stat,.wallet,#luck,.modal-card{background:linear-gradient(145deg,#24352c,#0d1813) padding-box,var(--edge) border-box;border-width:1px;box-shadow:0 6px 18px #0005}
 .back,.mini{border-radius:8px}
+.quality-control{font-size:11px;min-width:36px}
+[data-graphics="light"] .cell.lucky{animation:none}
 .stat{border-radius:8px}
 .stat output,.wallet b{text-shadow:none;font-weight:500}
 .stat label{opacity:.85}

@@ -21,6 +21,7 @@
       </div>
     </div>
     <div class="top-actions">
+      <button class="icon-btn quality-control" data-quality type="button" aria-label="Modo gráfico leve" aria-pressed="false" title="Alternar modo gráfico">3D</button>
       <button class="icon-btn" id="btnSound" aria-label="Ligar ou desligar o som" title="Som (M)">🔊</button>
       <button class="icon-btn" id="btnHelp" aria-label="Regras e atalhos" title="Regras (?)">?</button>
     </div>
@@ -93,19 +94,9 @@
   </div>
 </div>
 
-<div class="modal" id="leaveModal" hidden role="dialog" aria-modal="true" aria-labelledby="leaveTitle">
-  <div class="modal-card center">
-    <h2 class="gold-text" id="leaveTitle">SAIR DA MESA?</h2>
-    <p>Há uma rodada em andamento. Se sair agora, você perde a aposta desta rodada.</p>
-    <div class="row">
-      <button class="mini" data-close>Continuar jogando</button>
-      <a class="mini danger" href="index.html">Sair e perder a aposta</a>
-    </div>
-  </div>
-</div>
-
 <div id="fallback"><div><h2>WebGL indisponível</h2><p>Este jogo precisa de aceleração gráfica (WebGL). Ative-a no navegador e recarregue a página.</p></div></div>
 
+<script src="js/quality.js"></script>
 <script src="lib/three.global.js"></script>
 <script src="js/casino-render.js"></script>
 <script src="js/logic.js"></script>
@@ -114,5 +105,6 @@
 <script src="js/common.js"></script>
 <script src="js/art.js"></script>
 <script src="js/game.js"></script>
+<script src="js/pwa.js"></script>
 </body>
 </html>

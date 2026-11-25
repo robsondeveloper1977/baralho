@@ -86,12 +86,20 @@
     if(restored)text='Último resultado salvo. '+text;
     message(text);
   }
-  function read(){
-    account=wallet.read();
+  async function read(){
+    const savedAccount=await wallet.snapshot();
+    if(busy)return;
+    account=savedAccount;
     const saved=account.slots?.last;
     last=saved&&L.validGrid(saved.grid)&&L.BETS.includes(saved.bet)?{...saved,...L.evaluate(saved.grid,saved.bet)}:null;
   }
-  try{read();present(true);update();}catch{message('Não foi possível ler a carteira. Habilite o armazenamento local para jogar.');$('spin').disabled=true;}
+  async function restoreWallet(){
+    if(busy)return;
+    try{await read();if(!busy){present(true);update();}}
+    catch{message('Não foi possível ler a carteira. Habilite o armazenamento local para jogar.');$('spin').disabled=true;}
+  }
+  $('spin').disabled=true;
+  restoreWallet();
   function betStep(delta){
     OceanAudio.click();
     const index=L.BETS.indexOf(Number($('bet').value));$('bet').value=String(L.BETS[Math.max(0,Math.min(L.BETS.length-1,index+delta))]);update();
@@ -114,16 +122,12 @@
       grid[c].forEach((s,r)=>symbol(c,r,s));reel.classList.remove('spinning');reel.classList.add('stopped');OceanAudio.reelStop(c,grid[c].includes('scatter'));
     }));
   }
-  async function withWalletLock(fn){
-    if(!navigator.locks)throw Error('Este navegador não oferece gravação segura entre abas. Use uma versão recente do navegador.');
-    return navigator.locks.request('vu21-wallet',fn);
-  }
   async function spin(){
     if(busy||$('rules').open)return;
     busy=true;clearHighlights();$('lines').hidden=true;$('reels').setAttribute('aria-busy','true');update();message('Os tesouros estão a caminho…');OceanAudio.unlock();
     try{
       // Saving the entire settlement first means reloads never replay money or bonus awards.
-      account=await withWalletLock(()=>wallet.commit(current=>L.spin(current,Number($('bet').value),random)));
+      account=await wallet.transact(current=>L.spin(current,Number($('bet').value),random));
       last=account.slots.last;
       OceanAudio.startSpin(quick || reduced.matches);
       await animate(last.grid);present();
@@ -134,7 +138,7 @@
       OceanAudio.stopSpin();
       timers.forEach(clearInterval);timers.clear();columns.forEach(r=>r.classList.remove('spinning'));
       busy=false;$('reels').setAttribute('aria-busy','false');
-      try{account=wallet.read();}catch{}
+      try{account=await wallet.snapshot();}catch{}
       update();
     }
   }
@@ -143,10 +147,10 @@
     if(busy)return;
     busy=true;update();
     try{
-      account=await withWalletLock(()=>wallet.commit(a=>{
+      account=await wallet.transact(a=>{
         if(a.balance>=L.BETS[0]||a.slots?.free)return a;
         return {...a,balance:wallet.START,slots:null};
-      }));
+      });
       last=account.slots?.last||null;clearHighlights();$('lines').hidden=true;message('Nova expedição: 1.000 fichas virtuais.');
     }catch{message('Não foi possível salvar a carteira.');}finally{busy=false;update();}
   };
@@ -157,9 +161,6 @@
     if(e.repeat||$('rules').open||e.ctrlKey||e.metaKey||e.altKey||/^(BUTTON|SELECT|INPUT|TEXTAREA|A)$/.test(e.target.tagName))return;
     if(e.code==='Space'||e.code==='Enter'){e.preventDefault();if(!$('spin').disabled)spin();}
   });
-  addEventListener('storage',e=>{
-    if(e.key!==wallet.KEY||busy)return;
-    try{read();present(true);update();}catch{message('A carteira foi alterada em outra aba. Recarregue para continuar.');$('spin').disabled=true;}
-  });
-  addEventListener('pageshow',e=>{if(e.persisted&&!busy){try{read();present(true);update();}catch{}}});
+  wallet.watch(restoreWallet);
+  addEventListener('pageshow',e=>{if(e.persisted)restoreWallet();});
 })();

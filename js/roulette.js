@@ -13,30 +13,53 @@ const ease = k => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 const TAU = Math.PI * 2, SLOT = TAU / 37, A0 = -Math.PI / 2;
 const slotAngle = i => A0 + i * SLOT;                       // ângulo da casa i (sentido horário visto de cima)
 const COLOR_NAME = { red: 'VERMELHO', black: 'PRETO', green: 'VERDE' };
+const wallet = Common.wallet;
 
 // ======================================================================
 //  Estado
 // ======================================================================
 function loadHistory() { try { const h = JSON.parse(localStorage.getItem('vu21.rl.history')); return Array.isArray(h) ? h.filter(n => Number.isInteger(n) && n >= 0 && n <= 36).slice(0, 14) : []; } catch { return []; } }
 const st = {
-  balance: Common.wallet.get(),
+  balance: wallet.get(),
   bets: {}, order: [], last: {},
   chip: 50,
-  phase: 'bet',            // bet | spin | settle
+  phase: 'loading',
   lucky: [],
   history: loadHistory(),
   won: 0,
 };
 const stake = () => L.totalBet(st.bets);
 
+async function restoreWallet() {
+  if (st.phase !== 'bet' && st.phase !== 'loading') return;
+  let account;
+  try { account = await wallet.snapshot(); }
+  catch { toast('Não foi possível abrir a carteira.'); return; }
+  if (st.phase !== 'bet' && st.phase !== 'loading') return;
+  if (st.phase === 'loading') {
+    st.phase = 'bet';
+    const last = account.roulette;
+    if (last) { ballIdx = WHEEL.indexOf(last.result); st.last = last.bets; markWinner(ballIdx); }
+  }
+  st.balance = account.balance - stake();
+  if (st.balance < 0) {
+    st.bets = {}; st.order = []; st.balance = account.balance;
+    renderBoard(); toast('O saldo mudou em outra aba. Faça suas apostas novamente.');
+  }
+  if (account.roulette?.history) {
+    st.history = account.roulette.history;
+    renderHistory();
+  }
+  if (openModal?.id === 'broke' && (st.balance >= MIN_BET || stake())) closeModal();
+  updateStats(false);
+}
+
 // ======================================================================
 //  Renderer / cena
 // ======================================================================
 let renderer;
-try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); }
+try { renderer = new THREE.WebGLRenderer({ antialias: !CasinoQuality.isLight(), alpha: true }); }
 catch (err) { $('fallback').style.display = 'grid'; console.error(err); return; }
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
@@ -44,7 +67,7 @@ renderer.domElement.id = 'scene';
 document.body.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 80);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 250);
 const PITCH = 58 * Math.PI / 180;
 let camDist = 16;
 const mouse = { x: 0, y: 0 };
@@ -204,23 +227,31 @@ const coins = Coins.create(scene, { floorY: 0.3 });
 // ======================================================================
 let boardOrient = null;
 function layout() {
-  const W = innerWidth, H = innerHeight, wide = W >= 1000 && W / H >= 1.3;
+  const W = innerWidth, H = innerHeight;
+  const short = W / H >= 1.3 && H <= 500;
+  const compact = W < 640 || short;
+  const wide = short || W >= 1000 && W / H >= 1.3;
   document.body.classList.toggle('wide', wide); document.body.classList.toggle('stack', !wide);
-  const orient = !wide && W < 640 ? 'v' : 'h';
+  document.body.classList.toggle('compact', compact);
+  document.body.classList.toggle('short', short);
+  const orient = !wide && W < 640 ? 'compact-board' : 'h';
   if (orient !== boardOrient) buildBoard(orient);
   const ph = $('panel').offsetHeight;
+  const top = Math.ceil($('topbar').getBoundingClientRect().bottom);
   document.body.style.setProperty('--panel-h', ph + 'px');
-  if (!wide) document.body.style.setProperty('--wheel-h', Math.round(Math.max(200, Math.min(H * (W < 640 ? 0.27 : 0.4), 440))) + 'px');
+  document.body.style.setProperty('--table-top', top + 'px');
+  const wheelHeight = compact ? Math.max(65, Math.min(H - top - ph - 360, 210)) : Math.max(200, Math.min(H * .4, 440));
+  if (!wide) document.body.style.setProperty('--wheel-h', Math.round(wheelHeight) + 'px');
   renderer.setSize(W, H); camera.aspect = W / H;
-  let fx = 0, fy = 70, fw, fh;
-  if (wide) { fw = $('side').getBoundingClientRect().left - 10; fh = H - ph - 78; }
-  else { fw = W; fh = parseFloat(getComputedStyle(document.body).getPropertyValue('--wheel-h')) - 6; }
-  const ppu = Math.max(20, Math.min(fw * 0.94 / 7.7, fh * 0.94 / (7.7 * Math.sin(PITCH) + 0.5)));
+  const fx = 0, fy = compact ? top : 70;
+  const fw = wide ? $('side').getBoundingClientRect().left - 10 : W;
+  const fh = wide ? H - ph - fy - 8 : wheelHeight - 6;
+  const ppu = Math.max(6, Math.min(fw * 0.94 / 7.7, fh * 0.94 / (7.7 * Math.sin(PITCH) + 0.5)));
   camDist = H / (2 * Math.tan(camera.fov * Math.PI / 360) * ppu);
   camera.setViewOffset(W, H, W / 2 - (fx + fw / 2), H / 2 - (fy + fh / 2), W, H);
   camera.updateProjectionMatrix();
   // faixa de resultado centralizada sobre a roda
-  const b = $('banner'); b.style.left = (fx + fw / 2) + 'px'; b.style.top = (fy + 40) + 'px';
+  const b = $('banner'); b.style.left = (fx + fw / 2) + 'px'; b.style.top = (fy + (compact ? fh / 2 : 40)) + 'px';
 }
 
 // ======================================================================
@@ -265,12 +296,14 @@ function buildBoard(orient) {
     [['low', '1–18', ''], ['even', 'PAR', ''], ['red', '◆', 'red'], ['black', '◆', 'black'], ['odd', 'ÍMPAR', ''], ['high', '19–36', '']]
       .forEach(([k, lbl, c], i) => add(k, lbl, 'out ' + c, 2 + i * 2, 5, 2, 1, L.RULES[k].label));
   } else {
-    add('n:0', '0', 'num green', 1, 1, 3, 1, 'Número 0, verde');
-    for (let n = 1; n <= 36; n++) add('n:' + n, n, 'num ' + num(n), ((n - 1) % 3) + 1, Math.ceil(n / 3) + 1, 1, 1, `Número ${n}, ${COLOR_NAME[num(n)].toLowerCase()}`);
-    add('c1', '2:1', 'out', 1, 14, 1, 1, '1ª coluna, paga 2 para 1'); add('c2', '2:1', 'out', 2, 14, 1, 1, '2ª coluna, paga 2 para 1'); add('c3', '2:1', 'out', 3, 14, 1, 1, '3ª coluna, paga 2 para 1');
-    add('d1', '1ª DÚZIA', 'out', 4, 2, 1, 4, '1ª dúzia'); add('d2', '2ª DÚZIA', 'out', 4, 6, 1, 4, '2ª dúzia'); add('d3', '3ª DÚZIA', 'out', 4, 10, 1, 4, '3ª dúzia');
+    add('n:0', '0', 'num green', 1, 1, 6, 1, 'Número 0, verde');
+    for (let n = 1; n <= 36; n++) add('n:' + n, n, 'num ' + num(n), ((n - 1) % 6) + 1, Math.ceil(n / 6) + 1, 1, 1, `Número ${n}, ${COLOR_NAME[num(n)].toLowerCase()}`);
+    for (let i = 1; i <= 3; i++) {
+      add('d' + i, `${i}ª DÚZIA`, 'out', i * 2 - 1, 8, 2, 1, `${i}ª dúzia`);
+      add('c' + i, `COL. ${i}`, 'out', i * 2 - 1, 10, 2, 1, `${i}ª coluna, paga 2 para 1`);
+    }
     [['low', '1–18', ''], ['even', 'PAR', ''], ['red', '◆', 'red'], ['black', '◆', 'black'], ['odd', 'ÍMPAR', ''], ['high', '19–36', '']]
-      .forEach(([k, lbl, c], i) => add(k, lbl, 'out ' + c, 5, 2 + i * 2, 1, 2, L.RULES[k].label));
+      .forEach(([k, lbl, c], i) => add(k, lbl, 'out ' + c, i + 1, 9, 1, 1, L.RULES[k].label));
   }
   board.appendChild(frag);
   renderBoard();
@@ -403,24 +436,34 @@ function launchBall(result) {
 async function spin() {
   if (st.phase !== 'bet' || !stake()) return;
   Sfx.unlock();
-  st.phase = 'spin'; st.last = { ...st.bets };
-  Common.wallet.set(st.balance);            // aposta já descontada: salva só o que não pode ser desfeito
+  st.phase = 'spin'; updateStats(false);
+  const result = L.spinNumber();
+  const luckyHit = st.lucky.includes(result);
+  const res = L.settle(st.bets, result, luckyHit ? LUCKY_MULT : 1);
+  let account;
+  try {
+    account = await wallet.transact(current => {
+      if (current.balance < res.staked) throw Error('Fichas insuficientes para esta rodada.');
+      const history = [result, ...(current.roulette?.history ?? st.history)].slice(0, 14);
+      return { ...current, balance: current.balance + res.net, roulette: { history, result, bets: { ...st.bets } } };
+    });
+  } catch (error) {
+    st.phase = 'bet'; await restoreWallet();
+    toast(error.message || 'Não foi possível salvar a rodada.');
+    return;
+  }
+  st.last = account.roulette.bets;
   hideBanner(); clearWin(); clearWinner(); st.won = 0; mascot('idle');
   updateStats();
-  const result = L.spinNumber();
   await launchBall(result);
   omegaTarget = -0.15;
   await sleep(450);
 
   // ---------- liquidação ----------
   st.phase = 'settle';
-  const luckyHit = st.lucky.includes(result);
-  const res = L.settle(st.bets, result, luckyHit ? LUCKY_MULT : 1);
   const staked = res.staked;
-  st.balance += res.payout; st.won = Math.max(0, res.net);
-  Common.wallet.set(st.balance);
-  st.history.unshift(result); st.history.length = Math.min(st.history.length, 14);
-  try { localStorage.setItem('vu21.rl.history', JSON.stringify(st.history)); } catch {}
+  st.balance = account.balance; st.won = Math.max(0, res.net);
+  st.history = account.roulette.history;
   markWinner(ballIdx = WHEEL.indexOf(result));
   for (const w of res.wins) cells[w.key]?.classList.add('win'); cells['n:' + result]?.classList.add('win');
   st.bets = {}; st.order = []; renderBoard(); renderHistory();
@@ -429,7 +472,7 @@ async function spin() {
   if (res.net > 0) {
     banner(result, `+${fmt(res.net)}`, luckyHit ? 'win lucky' : 'win', luckyHit ? 'TIGRE DA SORTE ×2!' : (big ? 'GRANDE PRÊMIO!' : ''));
     luckyHit || big ? (Sfx.blackjack(), mascot('wow', 'bounce')) : (Sfx.win(res.net >= 250), mascot('happy', 'bounce'));
-    coins.burst(Math.min(70, 14 + Math.floor(res.net / 20)), { w: 5, d: 5, top: 7 });
+    if (!CasinoQuality.isLight()) coins.burst(Math.min(70, 14 + Math.floor(res.net / 20)), { w: 5, d: 5, top: 7 });
   } else if (res.net === 0) {
     banner(result, 'Aposta devolvida', 'push', luckyHit ? 'Tigre da Sorte!' : ''); Sfx.push();
   } else {
@@ -437,7 +480,7 @@ async function spin() {
     banner(result, `−${fmt(-res.net)}`, 'lose', luckyHit ? 'O tigre estava de olho…' : (res.wins.length ? 'Você acertou parte das apostas' : '')); Sfx.lose(); mascot('sad', 'shake');
   }
   newRound();
-  st.phase = 'bet'; updateStats();
+  st.phase = 'bet'; await restoreWallet();
   if (st.balance < MIN_BET) setTimeout(showBroke, 1900);
 }
 function newRound() {
@@ -455,10 +498,15 @@ document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e =
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal));
 $('btnHelp').onclick = () => { Sfx.click(); showModal('rules'); };
 $('btnBack').addEventListener('click', e => { if (st.phase !== 'bet') { e.preventDefault(); showModal('leaveModal'); } });
-$('restart').onclick = () => {
-  closeModal(); Sfx.unlock(); Sfx.win();
-  st.balance = Common.wallet.START; Common.wallet.set(st.balance); st.won = 0; st.bets = {}; st.order = [];
-  updateStats(); renderBoard(); mascot('happy', 'bounce');
+$('restart').onclick = async () => {
+  if (st.phase !== 'bet') return;
+  Sfx.unlock(); st.phase = 'refill';
+  try {
+    await wallet.transact(account => account.balance < MIN_BET ? { ...account, balance: wallet.START } : account);
+    closeModal(); Sfx.win(); st.won = 0; st.bets = {}; st.order = [];
+    renderBoard(); mascot('happy', 'bounce');
+  } catch (error) { toast(error.message || 'Não foi possível repor as fichas.'); }
+  finally { st.phase = 'bet'; restoreWallet(); }
 };
 const syncSound = () => { $('btnSound').textContent = Sfx.muted ? '🔇' : '🔊'; };
 function toggleSound() { Sfx.setMuted(!Sfx.muted); syncSound(); if (!Sfx.muted) Sfx.click(); }
@@ -493,12 +541,15 @@ Art.hydrate();
 Common.sparks($('sparks'));
 let resizeRaf = 0;
 addEventListener('resize', () => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(layout); });
-newRound(); renderHistory(); updateStats(false); layout();
+newRound(); renderHistory(); updateStats(false); CasinoQuality.configure(renderer, layout);
 ballIdx = 0; W = 0;
-if (st.balance < MIN_BET) showBroke();
+restoreWallet().then(showBroke);
+wallet.watch(restoreWallet);
+addEventListener('pageshow', event => { if (event.persisted) restoreWallet(); });
 
 const clock = new THREE.Clock();
-renderer.setAnimationLoop(() => {
+const renderFrame = CasinoQuality.drawWhenDue(() => renderer.render(scene, camera));
+renderer.setAnimationLoop(time => {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   omega += (omegaTarget - omega) * Math.min(1, dt * 1.6);
   W += omega * dt; wheelGroup.rotation.y = -W;
@@ -520,7 +571,7 @@ renderer.setAnimationLoop(() => {
 
   camera.position.set(mouse.x * 0.9, camDist * Math.sin(PITCH) - mouse.y * 0.5, camDist * Math.cos(PITCH));
   camera.lookAt(0, 0, 0);
-  renderer.render(scene, camera);
+  renderFrame(time);
 });
 
 })();

@@ -96,6 +96,49 @@
   /** Maior aposta possível (múltiplo da aposta mínima) para um saldo. */
   const maxBet = balance => Math.floor(balance / MIN_BET) * MIN_BET;
 
+  /** Apply one decision and persist funds, cards and result together. */
+  function blackjackTurn(account, { action, bet, revision }, rng = Math.random) {
+    const previous = account.blackjack?.hand;
+    if ((previous?.revision ?? 0) !== revision) throw Error('A rodada mudou em outra aba.');
+    const shoe = new Shoe(4, rng);
+    if (account.blackjack?.shoe) shoe.cards = [...account.blackjack.shoe];
+    const ranks = cards => cards.map(card => card.rank);
+    let balance = account.balance;
+    let hand;
+
+    if (action === 'deal') {
+      if (previous && !previous.result) throw Error('Já existe uma rodada em andamento.');
+      bet = Math.min(bet, maxBet(balance));
+      if (!Number.isSafeInteger(bet) || bet < MIN_BET || bet % MIN_BET) throw Error('Fichas insuficientes.');
+      balance -= bet;
+      if (shoe.needsShuffle()) shoe.shuffle();
+      const first = shoe.draw(), up = shoe.draw(), second = shoe.draw(), down = shoe.draw();
+      hand = { bet, doubled: false, player: [first, second], dealer: [up, down], result: null };
+      if (isBlackjack(ranks(hand.player)) || isBlackjack(ranks(hand.dealer))) {
+        hand.result = settle(ranks(hand.player), ranks(hand.dealer), bet);
+      }
+    } else {
+      if (!previous || previous.result) throw Error('A rodada já terminou.');
+      if (!['hit', 'stand', 'double'].includes(action)) throw Error('Ação inválida.');
+      hand = { ...previous, player: [...previous.player], dealer: [...previous.dealer] };
+      if (action === 'double') {
+        if (hand.player.length !== 2 || balance < hand.bet) throw Error('Aposta dobrada indisponível.');
+        balance -= hand.bet;
+        hand.bet *= 2;
+        hand.doubled = true;
+      }
+      if (action !== 'stand') hand.player.push(shoe.draw());
+      const points = total(ranks(hand.player));
+      if (points >= 21 || action !== 'hit') {
+        while (points <= 21 && dealerShouldHit(ranks(hand.dealer))) hand.dealer.push(shoe.draw());
+        hand.result = settle(ranks(hand.player), ranks(hand.dealer), hand.bet);
+      }
+    }
+    if (hand.result) balance += hand.result.payout;
+    hand.revision = revision + 1;
+    return { ...account, balance, blackjack: { hand, shoe: shoe.cards } };
+  }
+
   return { SUITS, RANKS, MIN_BET, CHIP_VALUES, DEALER_STANDS_ON,
-           value, total, isSoft, isBlackjack, dealerShouldHit, Shoe, settle, chipBreakdown, maxBet };
+           value, total, isSoft, isBlackjack, dealerShouldHit, Shoe, settle, chipBreakdown, maxBet, blackjackTurn };
 });
