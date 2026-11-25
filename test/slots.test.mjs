@@ -9,26 +9,26 @@ test('20 linhas distintas e sorteios dentro do catálogo',()=>{
  assert.equal(L.randomGrid(()=>.999)[0][0],'scatter');
  assert.throws(()=>L.randomGrid(()=>1));
 });
-test('cinco conchas pagam cada linha exatamente uma vez',()=>{
- const result=L.evaluate(grid('shell'),20);
+test('cinco fichas pagam cada linha exatamente uma vez',()=>{
+ const result=L.evaluate(grid('chip'),20);
  assert.equal(result.wins.length,20);assert.equal(result.payout,1100);
 });
 test('Wild escolhe o prêmio maior, sem duplicar a mesma linha',()=>{
- const g=grid('wild'); g[3]=['shell','shell','shell']; g[4]=['shell','shell','shell'];
- // Three Wilds pay 55; five shells also pay 55. Only one is paid per line.
+ const g=grid('wild'); g[3]=['chip','chip','chip']; g[4]=['chip','chip','chip'];
+ // Three Wilds pay 55; five chips also pay 55. Only one is paid per line.
  assert.equal(L.evaluate(g,20).payout,1100);
  g[3]=['crown','crown','crown'];g[4]=['crown','crown','crown'];
  assert.equal(L.evaluate(g,20).payout,13000);
  assert.equal(L.evaluate(grid('wild'),20).payout,22000);
 });
-test('Scatter não é substituído e três pérolas liberam oito giros',()=>{
- const g=grid('shell');g[0]=['scatter','scatter','scatter'];
+test('Scatter não é substituído e três roletas liberam oito giros',()=>{
+ const g=grid('chip');g[0]=['scatter','scatter','scatter'];
  const r=L.evaluate(g,20);assert.equal(r.awarded,8);assert.equal(r.payout,0);
 });
 test('somente sequências a partir da primeira coluna são pagas',()=>{
- const g=grid('shell');g[0]=['fish','fish','fish'];
+ const g=grid('chip');g[0]=['bell','bell','bell'];
  assert.equal(L.evaluate(g,20).payout,0);
- g[0]=['shell','shell','shell'];g[3]=['fish','fish','fish'];g[4]=['fish','fish','fish'];
+ g[0]=['chip','chip','chip'];g[3]=['bell','bell','bell'];g[4]=['bell','bell','bell'];
  assert.equal(L.evaluate(g,20).payout,100);
 });
 test('giro grátis usa aposta do bônus, desconta um giro e pode reativar',()=>{

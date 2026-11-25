@@ -18,7 +18,7 @@
     cells[col][row].setAttribute('aria-label','Rolo '+(col+1)+', posição '+(row+1)+': '+s.name);
   }
   function draw(grid){grid.forEach((col,c)=>col.forEach((id,r)=>symbol(c,r,id)));}
-  draw([['shell','gem','star'],['fish','wild','crown'],['chest','scatter','gem'],['crown','shell','fish'],['star','gem','chest']]);
+  draw([['chip','diamond','die'],['bell','wild','crown'],['vault','scatter','diamond'],['crown','chip','bell'],['die','diamond','vault']]);
   $('wild-preview').src=SlotsArt.urls.wild;$('scatter-preview').src=SlotsArt.urls.scatter;
   for(const bet of L.BETS){const o=document.createElement('option');o.value=bet;o.textContent=fmt(bet);$('bet').append(o);}
   $('bet').value='20';
@@ -53,7 +53,7 @@
     if(free)$('bet').value=String(account.slots.bonusBet);
     $('balance').textContent=fmt(account.balance);
     $('prize').textContent=fmt(last?.payout||0);
-    $('bonus').textContent=free?free+' GIROS GRÁTIS · APOSTA '+fmt(account.slots.bonusBet):'3 PÉROLAS · 8 GIROS GRÁTIS';
+    $('bonus').textContent=free?free+' GIROS GRÁTIS · APOSTA '+fmt(account.slots.bonusBet):'3 ROLETAS · 8 GIROS GRÁTIS';
     document.querySelector('.machine').classList.toggle('bonus-active',free>0);
     const index=L.BETS.indexOf(Number($('bet').value));
     $('less').disabled=busy||!!free||index===0;$('more').disabled=busy||!!free||index===L.BETS.length-1;

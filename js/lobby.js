@@ -4,7 +4,7 @@
 
 const GAMES = [
   { id: 'oceano', name: 'Tesouros do Oceano', href: 'tesouros-do-oceano.html', available: true,
-    desc: 'Explore cinco rolos de tesouros. Encontre pérolas para liberar oito giros grátis.',
+    desc: 'Explore cinco rolos de tesouros. Encontre roletas para liberar oito giros grátis.',
     tags: ['20 linhas', 'Wild', 'Giros grátis'], art: 'ocean' },
   {
     id: 'vinte-e-um', name: 'Vinte e Um', href: 'vinte-e-um.html', available: true,
@@ -15,6 +15,11 @@ const GAMES = [
     id: 'roleta', name: 'Roleta do Tigre', href: 'roleta-do-tigre.html', available: true,
     desc: 'Roleta europeia em 3D com o Tigre da Sorte: caia num número dele e seus lucros dobram.',
     tags: ['3D', 'Tigre da Sorte ×2', 'Paga 35:1'], art: 'roulette',
+  },
+  {
+    id: 'crash', name: 'Foguete do Tigre', href: 'foguete-do-tigre.html', available: true, preview: 'img/crash-preview.svg',
+    desc: 'O foguete sobe e o multiplicador cresce. Saque antes que exploda: quanto mais tarde, maior o prêmio.',
+    tags: ['Crash', 'Saque automático', 'Até 1000×'], art: 'crash',
   },
   {
     id: 'bacara', name: 'Bacará', available: false,
@@ -45,7 +50,7 @@ GAMES.forEach((g, i) => {
   el.style.setProperty('--i', i);
   if (g.available) el.href = g.href; else el.setAttribute('aria-disabled', 'true');
   el.innerHTML = `
-    <div class="art">${g.available ? `<img class="table-preview" src="${g.art === 'ocean' ? 'img/ocean-preview.svg' : 'img/' + (g.art === 'bj' ? 'blackjack' : 'roulette') + '-table.png'}" alt="Prévia de ${esc(g.name)}" width="1000" height="550" decoding="async">` : ART[g.art] || ''}${g.available ? '' : '<span class="lock" aria-hidden="true">🔒</span><span class="ribbon">EM BREVE</span>'}</div>
+    <div class="art">${g.available ? `<img class="table-preview" src="${g.preview || (g.art === 'ocean' ? 'img/ocean-preview.svg' : 'img/' + (g.art === 'bj' ? 'blackjack' : 'roulette') + '-table.png')}" alt="Prévia de ${esc(g.name)}" width="1000" height="550" decoding="async">` : ART[g.art] || ''}${g.available ? '' : '<span class="lock" aria-hidden="true">🔒</span><span class="ribbon">EM BREVE</span>'}</div>
     <div class="info">
       <h3>${esc(g.name)}</h3>
       <p>${esc(g.desc)}</p>
